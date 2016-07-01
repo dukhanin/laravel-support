@@ -20,7 +20,7 @@
             "src/helpers.php"
         ]
     },
-    "minimum-stability": "stable"
+    "minimum-stability": "dev"
 }
 
 
