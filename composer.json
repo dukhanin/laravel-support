@@ -19,12 +19,7 @@
         "files": [
             "src/helpers.php"
         ]
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "master"
-        }
-    },
+    }
     "minimum-stability": "stable"
 }
 
