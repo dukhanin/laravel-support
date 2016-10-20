@@ -18,6 +18,18 @@ class Arr extends BaseArr
     }
 
 
+    public static function beforeDotNotation(&$array, $key, $value, $keyBefore = null)
+    {
+        return static::beforeOrAfterDotNotation($array, $key, $value, $keyBefore);
+    }
+
+
+    public static function afterDotNotation(&$array, $key, $value, $keyAfter = null)
+    {
+        return static::beforeOrAfterDotNotation($array, $key, $value, $keyAfter, true);
+    }
+
+
     protected static function beforeOrAfter(&$array, $key, $value, $keyNeighbor = null, $after = false)
     {
         if (isset( $array[$key] )) {
@@ -25,22 +37,20 @@ class Arr extends BaseArr
         }
 
         if (is_null($keyNeighbor) || ! is_array($array) || ! array_key_exists($keyNeighbor, $array)) {
-            return $after ? static::add($array, $value, $key) : static::prepend($array, $value, $key);
+            return $after ? static::add($array, $key, $value) : static::prepend($array, $value, $key);
         }
 
         $keyNeighborIndex = array_search($keyNeighbor, array_keys($array));
         $sliceLength      = $keyNeighborIndex + ( $after ? 1 : 0 );
-        $left             = array_slice($array, 0, $sliceLength);
-        $right            = array_slice($array, $sliceLength);
 
-        return $array = $left + [ $key => $value ] + $right;
+        return $array = array_slice($array, 0, $sliceLength) + [ $key => $value ] + array_slice($array, $sliceLength);
     }
 
 
-    protected static function beforeOrAfterDot(&$array, $key, $value, $keyNeighbor = null, $after = false)
+    protected static function beforeOrAfterDotNotation(&$array, $key, $value, $keyNeighbor = null, $after = false)
     {
         if (is_null($keyNeighbor)) {
-            return $after ? static::set($array, $value, $key) : static::prepend($array, $value, $key);
+            return $after ? static::set($array, $key, $value) : static::prepend($array, $value, $key);
         }
 
         $segments        = explode('.', $keyNeighbor);
@@ -65,10 +75,9 @@ class Arr extends BaseArr
                 unset( $leveledArray[$key] );
             }
 
-            $left  = array_slice($leveledArray, 0, $keyNeighborIndex + ( $after ? 1 : 0 ));
-            $right = array_slice($leveledArray, $keyNeighborIndex);
-
-            $leveledArray = $left + [ $key => $value ] + $right;
+            $leveledArray = array_slice($leveledArray, 0,
+                    $keyNeighborIndex + ( $after ? 1 : 0 )) + [ $key => $value ] + array_slice($leveledArray,
+                    $keyNeighborIndex);
         } else {
             array_set($leveledArray, $key, $value);
         }
