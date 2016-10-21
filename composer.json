@@ -10,7 +10,8 @@
     ],
     "require": {
         "php": ">=5.5.9",
-        "dukhanin/laravel-support": ">=5.0"
+        "illuminate/support": ">=5.0",
+        "true/punycode": "~2.0"
     },
     "autoload": {
         "psr-4": {
