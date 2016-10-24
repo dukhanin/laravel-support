@@ -61,6 +61,7 @@ class HTMLHelper
         $tagClose   = ! array_get($tag, 'tag-open');
         $attributes = array_get($tag, 'attributes');
         $content    = array_get($tag, 'content');
+        $data       = array_get($tag, 'data');
 
         if (array_get($tag, 'tag-plural')) {
             $tagType = 'plural';
@@ -72,6 +73,14 @@ class HTMLHelper
 
         array_forget($tag,
             [ 'tag-name', 'tag-plural', 'tag-singular', 'tag-open', 'tag-close', 'attributes', 'content' ]);
+
+        if( is_array($data) ) {
+            foreach ($data as $key => $value) {
+                array_set($attributes, "data-{$key}", $value);
+            }
+
+            array_forget($tag, 'data');
+        }
 
         foreach ($tag as $key => $value) {
             array_set($attributes, "data-{$key}", $value);
