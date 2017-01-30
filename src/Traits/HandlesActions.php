@@ -15,6 +15,8 @@ trait HandlesActions
 
     protected $url;
 
+    protected $nestedLevel = 0;
+
 
     public function before()
     {
@@ -31,6 +33,24 @@ trait HandlesActions
     }
 
 
+    protected function incrementNestedLevel()
+    {
+        if ( ! isset( $GLOBALS['HandlesActionsNested'] )) {
+            $GLOBALS['HandlesActionsNested'] = 0;
+        } else {
+            $GLOBALS['HandlesActionsNested']++;
+        }
+
+        $this->nestedLevel = $GLOBALS['HandlesActionsNested'];
+    }
+
+
+    protected function decrementNestedLevel()
+    {
+        $GLOBALS['HandlesActionsNested']--;
+    }
+
+
     public function handle()
     {
     }
@@ -38,9 +58,15 @@ trait HandlesActions
 
     public function execute()
     {
+        $this->incrementNestedLevel();
+
         $info = $this->getRequestDetails();
 
-        return $this->executeAction($info['action'], $info['arguments']);
+        $response = $this->executeAction($info['action'], $info['arguments']);
+
+        $this->decrementNestedLevel();
+
+        return $response;
     }
 
 
