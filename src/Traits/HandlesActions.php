@@ -3,8 +3,9 @@
 namespace Dukhanin\Support\Traits;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Facades\Request as RequestFacade;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Exception;
 
 trait HandlesActions
 {
@@ -107,7 +108,11 @@ trait HandlesActions
 
     public function initUrl()
     {
-        $this->url = Request::fullUrl();
+        if ($currentRoute = Route::getCurrentRoute()) {
+            $this->url = route($currentRoute->getName());
+        } else {
+            throw new Exception('Auth guard [' . __CLASS__ . '::url] is not defined.' . ' Set it manually or override [' . __CLASS__ . '::initUrl()] method.');
+        }
     }
 
 
@@ -147,7 +152,7 @@ trait HandlesActions
         ];
 
         $thisPath   = urlbuilder($this->getUrl())->path();
-        $requestUrl = urlbuilder(RequestFacade::path())->shift($thisPath);
+        $requestUrl = urlbuilder($this->getRequest()->path())->shift($thisPath);
 
         if (count($requestUrl->segments()) == 0) {
             return $result;
@@ -180,7 +185,7 @@ trait HandlesActions
     public function getActionMethodName($action)
     {
         $action = strtolower($action);
-        $method = 'action' . ucfirst($action);
+        $method = 'action' . studly_case($action);
 
         return $method;
     }
