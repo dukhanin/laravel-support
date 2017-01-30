@@ -40,7 +40,7 @@ class HTMLHelper
                 continue;
             }
 
-            $value  = $value = is_scalar($value) ? addslashes(value($value)) : gettype($value);
+            $value  = $value = is_scalar($value) ? str_replace("'", "\\'", value($value)) : gettype($value);
             $html[] = "{$key}='{$value}'";
         }
 
@@ -74,7 +74,7 @@ class HTMLHelper
         array_forget($tag,
             [ 'tag-name', 'tag-plural', 'tag-singular', 'tag-open', 'tag-close', 'attributes', 'content' ]);
 
-        if( is_array($data) ) {
+        if (is_array($data)) {
             foreach ($data as $key => $value) {
                 array_set($attributes, "data-{$key}", $value);
             }
@@ -201,6 +201,15 @@ class HTMLHelper
 
         if ( ! array_has($tag, 'attributes')) {
             array_set($tag, 'attributes', null);
+        }
+
+        foreach ($tag as $key => $value) {
+            if ( ! str_contains($key, '.')) {
+                continue;
+            }
+
+            array_set($tag, $key, $value);
+            unset( $tag[$key] );
         }
 
         $this->validateContent($tag['tag-name']);
