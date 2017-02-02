@@ -10,7 +10,7 @@
     ],
     "require": {
         "php": ">=5.5.9",
-        "illuminate/support": ">=5.0",
+        "illuminate/support": "dev-master",
         "true/punycode": "~2.0"
     },
     "autoload": {
