@@ -82,8 +82,8 @@ trait HandlesActions
 
     public function initUrl()
     {
-        if ($currentRoute = Route::getCurrentRoute()) {
-            $this->url = route($currentRoute->getName());
+        if ($currentRouteName = Route::getCurrentRoute()->getName()) {
+            $this->url = route($currentRouteName);
         } else {
             throw new Exception('Auth guard [' . __CLASS__ . '::url] is not defined.' . ' Set it manually or override [' . __CLASS__ . '::initUrl()] method.');
         }
