@@ -1,7 +1,7 @@
 <?php
 use Dukhanin\Support\Arr;
 use Dukhanin\Support\URLBuilder;
-use Dukhanin\Support\HTMLHelper;
+use Dukhanin\Support\HTMLGenerator;
 
 if ( ! function_exists('array_before')) {
     function array_before(&$array, $key, $value, $keyBefore = null)
@@ -28,37 +28,44 @@ if ( ! function_exists('urlbuilder')) {
     }
 }
 
+if ( ! function_exists('html_generator')) {
+    function html_generator()
+    {
+        return HTMLGenerator::instance();
+    }
+}
+
 if ( ! function_exists('html_tag')) {
     function html_tag(...$args)
     {
-        return HTMLHelper::instance()->renderTag(...$args);
+        return html_generator()->renderTag(...$args);
     }
 }
 
 if ( ! function_exists('html_tag_open')) {
     function html_tag_open(...$args)
     {
-        return HTMLHelper::instance()->openTag(...$args);
+        return html_generator()->openTag(...$args);
     }
 }
 
 if ( ! function_exists('html_tag_close')) {
     function html_tag_close(...$args)
     {
-        return HTMLHelper::instance()->closeTag(...$args);
+        return html_generator()->closeTag(...$args);
     }
 }
 
 if ( ! function_exists('html_tag_attr')) {
     function html_tag_attr(...$args)
     {
-        return HTMLHelper::instance()->renderAttributes(...$args);
+        return html_generator()->renderAttributes(...$args);
     }
 }
 
 if ( ! function_exists('html_tag_add_class')) {
     function html_tag_add_class(&$tag, ...$args)
     {
-        return HTMLHelper::instance()->addClass($tag, ...$args);
+        return html_generator()->addClass($tag, ...$args);
     }
 }

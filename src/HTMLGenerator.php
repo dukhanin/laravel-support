@@ -2,7 +2,7 @@
 
 namespace Dukhanin\Support;
 
-class HTMLHelper
+class HTMLGenerator
 {
 
     protected static $instance;
@@ -36,11 +36,11 @@ class HTMLHelper
         $html = [ ];
 
         foreach ($attributes as $key => $value) {
-            if (is_null($value)) {
+            if (is_null($value) || ! is_scalar($value)) {
                 continue;
             }
 
-            $value  = $value = is_scalar($value) ? str_replace("'", "\\'", value($value)) : gettype($value);
+            $value  = str_replace("'", "\\'", strval($value));
             $html[] = "{$key}='{$value}'";
         }
 
@@ -56,12 +56,8 @@ class HTMLHelper
 
         $this->validateTagName($tag['tag-name']);
 
-        $tagName    = array_get($tag, 'tag-name');
-        $tagOpen    = ! array_get($tag, 'tag-close');
-        $tagClose   = ! array_get($tag, 'tag-open');
-        $attributes = array_get($tag, 'attributes');
-        $content    = array_get($tag, 'content');
-        $data       = array_get($tag, 'data');
+        $tagOpen  = ! array_get($tag, 'tag-close');
+        $tagClose = ! array_get($tag, 'tag-open');
 
         if (array_get($tag, 'tag-plural')) {
             $tagType = 'plural';
@@ -71,37 +67,22 @@ class HTMLHelper
             $tagType = 'auto';
         }
 
-        array_forget($tag,
-            [ 'tag-name', 'tag-plural', 'tag-singular', 'tag-open', 'tag-close', 'attributes', 'content' ]);
-
-        if (is_array($data)) {
-            foreach ($data as $key => $value) {
-                array_set($attributes, "data-{$key}", $value);
-            }
-
-            array_forget($tag, 'data');
-        }
-
-        foreach ($tag as $key => $value) {
-            array_set($attributes, "data-{$key}", $value);
-        }
-
-        $attributes = $this->renderAttributes($attributes);
+        $attributes = $this->renderAttributes($this->attributes($tag));
         $attributes = empty( $attributes ) ? '' : ' ' . $attributes;
 
-        if ($tagType === 'singular' || ( $tagType === 'auto' && $content === null && $tagOpen && $tagClose )) {
-            return "<{$tagName}{$attributes} />";
+        if ($tagType === 'singular' || ( $tagType === 'auto' && $tag['content'] === null && $tagOpen && $tagClose )) {
+            return "<{$tag['tag-name']}{$attributes} />";
         }
 
         if ($tagOpen) {
-            $tagOpen = "<{$tagName}{$attributes}>";
+            $tagOpen = "<{$tag['tag-name']}{$attributes}>";
         }
 
         if ($tagClose) {
-            $tagClose = "</{$tagName}>";
+            $tagClose = "</{$tag['tag-name']}>";
         }
 
-        return $tagOpen . ( $tagOpen && $tagClose ? $this->renderContent($content) : '' ) . $tagClose;
+        return $tagOpen . ( $tagOpen && $tagClose ? $this->renderContent(array_get($tag, 'content')) : '' ) . $tagClose;
     }
 
 
@@ -118,27 +99,19 @@ class HTMLHelper
         foreach ($overwrites as $overwrite) {
             $this->validateTag($overwrite);
 
-            // $this->preprocess($overwrite); @todo @dukhanin really remove?
-
-            if ($class = array_get($overwrite, 'attributes.class')) {
+            if ($class = array_get($overwrite, 'class')) {
                 $this->addClass($tag, $class);
-                array_forget($overwrite, 'attributes.class');
+                array_forget($overwrite, 'class');
             }
 
             $overwrite = array_filter($overwrite, function ($value) {
                 return ! is_null($value);
             });
 
-            foreach (array_dot($overwrite) as $key => $value) {
-                if (is_array($value)) {
-                    continue;
-                }
+            $tag = array_replace_recursive($tag, $overwrite);
 
-                array_set($tag, $key, $value);
-            }
-
-            if (isset( $tag['attributes']['class'] )) {
-                $this->validateClass($tag['attributes']['class']);
+            if (array_has($tag, 'class')) {
+                $this->validateClass($tag['class']);
             }
         }
 
@@ -149,11 +122,12 @@ class HTMLHelper
     public function addClass(&$tag, $class)
     {
         $this->validateTag($tag);
+
         $this->validateClass($class);
 
-        $tagClass = array_get($tag, 'attributes.class');
+        $tagClass = array_get($tag, 'class');
 
-        array_set($tag, 'attributes.class', trim($tagClass . ' ' . $class));
+        array_set($tag, 'class', trim($tagClass . ' ' . $class));
 
         return $tag;
     }
@@ -162,6 +136,7 @@ class HTMLHelper
     public function append(&$tag, $content)
     {
         $this->validateTag($tag);
+
         $this->validateContent($content);
 
         $tag['content'] .= $content;
@@ -173,6 +148,7 @@ class HTMLHelper
     public function prepend(&$tag, $content)
     {
         $this->validateTag($tag);
+
         $this->validateContent($content);
 
         $tag['content'] = $content . $tag['content'];
@@ -199,10 +175,6 @@ class HTMLHelper
             array_set($tag, 'content', null);
         }
 
-        if ( ! array_has($tag, 'attributes')) {
-            array_set($tag, 'attributes', null);
-        }
-
         foreach ($tag as $key => $value) {
             if ( ! str_contains($key, '.')) {
                 continue;
@@ -213,6 +185,7 @@ class HTMLHelper
         }
 
         $this->validateContent($tag['tag-name']);
+
         $this->validateAttributes($attributes);
 
         return $tag;
@@ -262,20 +235,16 @@ class HTMLHelper
 
     public function validateClass(&$class)
     {
-        if ( ! is_array($class)) {
+        if (is_array($class)) {
+            $class = array_flatten($class);
+            $class = array_map('strval', $class);
+            $class = array_map('trim', $class);
+            $class = implode(' ', $class);
+        } else {
             $class = strval($class);
-            $class = explode(' ', $class);
         }
 
-        $class = array_flatten($class);
-        $class = array_map('strval', $class);
-        $class = array_map('strtolower', $class);
-        $class = array_map('trim', $class);
-        $class = array_unique($class);
-        $class = implode(' ', $class);
-        $class = trim($class);
-
-        if ($class == '') {
+        if (empty( $class )) {
             $class = null;
         }
 
@@ -293,12 +262,37 @@ class HTMLHelper
     }
 
 
+    protected function attributes(array $tag)
+    {
+        $attributes = array_except($tag, [
+            'tag-name',
+            'tag-plural',
+            'tag-singular',
+            'tag-close',
+            'tag-open',
+            'content',
+            'data',
+            'meta'
+        ]);
+
+        if (is_array($data = array_get($tag, 'data'))) {
+            foreach ($data as $key => $value) {
+                $attributes["data-{$key}"] = $value;
+            }
+        }
+
+        return $attributes;
+    }
+
+
     protected function preprocess(&$tag)
     {
         $this->preprocessTitle($tag);
+
         $this->preprocessIcon($tag);
-        $this->preprocessClass($tag);
+
         $this->preprocessUrl($tag);
+
         $this->preprocessId($tag);
 
         return $tag;
@@ -312,8 +306,8 @@ class HTMLHelper
                 $this->append($tag, $title);
             }
 
-            if (array_get($tag, 'attributes.title') === null) {
-                array_set($tag, 'attributes.title', $title);
+            if (array_get($tag, 'title') === null) {
+                array_set($tag, 'title', $title);
             }
         }
 
@@ -328,13 +322,13 @@ class HTMLHelper
         if (array_get($tag, 'icon-only')) {
             $tag['content'] = null;
 
-            if (array_get($tag, 'attributes.title')) {
-                if (array_get($tag, 'toggle') === null && array_get($tag, 'attributes.data-toggle') === null) {
-                    array_set($tag, 'attributes.data-toggle', 'tooltip');
+            if (array_get($tag, 'title')) {
+                if (array_get($tag, 'toggle') === null && array_get($tag, 'data-toggle') === null) {
+                    array_set($tag, 'data-toggle', 'tooltip');
                 }
 
-                if (array_get($tag, 'placement') === null && array_get($tag, 'attributes.data-placement') === null) {
-                    array_set($tag, 'attributes.data-placement', 'auto');
+                if (array_get($tag, 'placement') === null && array_get($tag, 'data-placement') === null) {
+                    array_set($tag, 'data-placement', 'auto');
                 }
             }
         }
@@ -350,26 +344,12 @@ class HTMLHelper
     }
 
 
-    protected function preprocessClass(&$tag)
-    {
-        if ($class = array_get($tag, 'class')) {
-            $this->addClass($tag, $class);
-        }
-
-        array_forget($tag, 'class');
-
-        return $tag;
-    }
-
-
     protected function preprocessUrl(&$tag)
     {
         if ($url = array_get($tag, 'url')) {
-            if (in_array(array_get($tag, 'tag-name'), [ null, 'a' ], true) && array_get($tag,
-                    'attributes.href') === null
-            ) {
+            if (in_array(array_get($tag, 'tag-name'), [ null, 'a' ], true) && array_get($tag, 'href') === null) {
                 array_set($tag, 'tag-name', 'a');
-                array_set($tag, 'attributes.href', $url);
+                array_set($tag, 'href', $url);
                 array_forget($tag, 'url');
             }
         }
@@ -380,8 +360,8 @@ class HTMLHelper
 
     protected function preprocessId(&$tag)
     {
-        if ($id = array_get($tag, 'id') && array_get($tag, 'attributes.id') === null) {
-            array_set($tag, 'attributes.id', $id);
+        if ($id = array_get($tag, 'id') && array_get($tag, 'id') === null) {
+            array_set($tag, 'id', $id);
         }
 
         array_forget($tag, 'id');
@@ -409,7 +389,7 @@ class HTMLHelper
         }
 
         if (preg_match('/#([a-z0-9-_]+)/', $selector, $pock)) {
-            array_set($tag, 'attributes.id', $pock[1]);
+            array_set($tag, 'id', $pock[1]);
         }
 
         if (preg_match_all('/\.([a-z0-9-_]+)/', $selector, $pock)) {
