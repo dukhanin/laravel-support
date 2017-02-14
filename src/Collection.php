@@ -50,7 +50,7 @@ class Collection extends BaseCollection
 
     public function before($key, $value, $beforeKey = null)
     {
-        array_before($this->items, $key, $this->resolveItem($value), $beforeKey);
+        array_before($this->items, $key, $this->resolveItem($key, $value), $beforeKey);
 
         $this->touch();
 
@@ -60,7 +60,7 @@ class Collection extends BaseCollection
 
     public function after($key, $value, $afterKey = null)
     {
-        array_after($this->items, $key, $this->resolveItem($value), $afterKey);
+        array_after($this->items, $key, $this->resolveItem($key, $value), $afterKey);
 
         $this->touch();
 
@@ -89,15 +89,5 @@ class Collection extends BaseCollection
     public function resolveItem($key, $item)
     {
         return call_user_func($this->resolver, $key, $item);
-    }
-
-
-    protected function getArrayableItems($items)
-    {
-        $items = parent::getArrayableItems($items);
-
-        $items = array_map([ $this, 'resolveItem' ], $items);
-
-        return $items;
     }
 }
