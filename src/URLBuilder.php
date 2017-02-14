@@ -2,6 +2,7 @@
 namespace Dukhanin\Support;
 
 use Illuminate\Support\Facades\Request;
+use TrueBV\Punycode;
 
 class URLBuilder
 {
@@ -11,6 +12,8 @@ class URLBuilder
     protected $components;
 
     protected $encoded;
+
+    protected static $punycode;
 
 
     public function __construct($url = null)
@@ -294,7 +297,7 @@ class URLBuilder
                 $url[] = '@';
             }
 
-            $url[] = $this->encoded ? Punycode::instance()->encode($this->components['host']) : $this->components['host'];
+            $url[] = $this->encoded ? $this->punycode()->encode($this->components['host']) : $this->components['host'];
         }
 
         if ( ! empty( $path = $this->components['path'] )) {
@@ -318,6 +321,16 @@ class URLBuilder
         $this->encoded = true;
 
         return implode($url);
+    }
+
+
+    public function punycode()
+    {
+        if (is_null(static::$punycode)) {
+            static::$punycode = new Punycode;
+        }
+
+        return static::$punycode;
     }
 
 
@@ -353,7 +366,7 @@ class URLBuilder
 
     protected function sanitizeHost($host)
     {
-        return empty( $host ) ? false : Punycode::instance()->decode($host);
+        return empty( $host ) ? false : $this->punycode()->decode($host);
     }
 
 
