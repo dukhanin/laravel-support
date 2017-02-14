@@ -311,7 +311,7 @@ class HTMLGenerator
             }
         }
 
-        array_forget($tag, [ 'label', 'title' ]);
+        array_forget($tag, 'label');
 
         return $tag;
     }
