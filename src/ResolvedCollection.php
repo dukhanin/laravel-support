@@ -33,8 +33,8 @@ class ResolvedCollection extends Collection
 
     public function resolved()
     {
-        return collect($this->items)->each(function (&$item, $key) {
-            $item = $this->resolveItemOnIteration($key, $this->resolveItemOnGet($key, $item));
+        return collect($this->items)->map(function (&$item, $key) {
+            return $this->resolveItemOnIteration($key, $this->resolveItemOnGet($key, $item));
         });
     }
 
