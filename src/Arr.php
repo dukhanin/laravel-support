@@ -37,7 +37,7 @@ class Arr extends BaseArr
         }
 
         if (is_null($keyNeighbor) || ! is_array($array) || ! array_key_exists($keyNeighbor, $array)) {
-            return $after ? static::add($array, $key, $value) : static::prepend($array, $value, $key);
+            $array = $after ? static::add($array, $key, $value) : static::prepend($array, $value, $key);
         }
 
         $keyNeighborIndex = array_search($keyNeighbor, array_keys($array));
