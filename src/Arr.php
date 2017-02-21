@@ -32,12 +32,22 @@ class Arr extends BaseArr
 
     protected static function beforeOrAfter(&$array, $key, $value, $keyNeighbor = null, $after = false)
     {
-        if (isset( $array[$key] )) {
-            unset( $array[$key] );
+        if ( ! is_array($array)) {
+            $array = [ ];
         }
 
-        if (is_null($keyNeighbor) || ! is_array($array) || ! array_key_exists($keyNeighbor, $array)) {
-            $array = $after ? static::add($array, $key, $value) : static::prepend($array, $value, $key);
+        if (is_null($keyNeighbor) || ! array_key_exists($keyNeighbor, $array)) {
+            if (is_null($key)) {
+                $after ? array_push($array, $value) : array_unshift($array, $value);
+            } else {
+                $array = $after ? $array + [ $key => $value ] : [ $key => $value ] + $array;
+            }
+
+            return $array;
+        }
+
+        if (array_key_exists($key, $array)) {
+            unset( $array[$key] );
         }
 
         $keyNeighborIndex = array_search($keyNeighbor, array_keys($array));
@@ -47,10 +57,10 @@ class Arr extends BaseArr
     }
 
 
-    protected static function beforeOrAfterDotNotation(&$array, $key, $value, $keyNeighbor = null, $after = false)
+    protected static function beforeOrAfterDotNotation(array &$array, $key, $value, $keyNeighbor = null, $after = false)
     {
         if (is_null($keyNeighbor)) {
-            return $after ? static::set($array, $key, $value) : static::prepend($array, $value, $key);
+            return $array = $after ? static::after($array, $key, $value) : static::before($array, $key, $value);
         }
 
         $segments        = explode('.', $keyNeighbor);
@@ -65,22 +75,26 @@ class Arr extends BaseArr
             }
         } else {
             $leveledKey   = null;
-            $leveledArray = &$array;
+            $leveledArray = $array;
+        }
+
+        if ( ! array_key_exists($keyNeighborLast, $leveledArray)) {
+            array_forget($leveledArray, $key);
+
+            $leveledArray = $after ? array_set($leveledArray, $key, $value) : array_prepend($leveledArray, $value, $key);
+
+            return $array = array_set($array, $leveledKey, $leveledArray);
+        }
+
+        if (isset( $leveledArray[$key] )) {
+            unset( $leveledArray[$key] );
         }
 
         $keyNeighborIndex = array_search($keyNeighborLast, array_keys($leveledArray));
+        $sliceLength      = $keyNeighborIndex + ( $after ? 1 : 0 );
 
-        if ($keyNeighborIndex !== false) {
-            if (isset( $leveledArray[$key] )) {
-                unset( $leveledArray[$key] );
-            }
-
-            $leveledArray = array_slice($leveledArray, 0,
-                    $keyNeighborIndex + ( $after ? 1 : 0 )) + [ $key => $value ] + array_slice($leveledArray,
-                    $keyNeighborIndex);
-        } else {
-            array_set($leveledArray, $key, $value);
-        }
+        $leveledArray = array_slice($leveledArray, 0, $sliceLength) + [ $key => $value ] + array_slice($leveledArray,
+                $sliceLength);
 
         return array_set($array, $leveledKey, $leveledArray);
     }
