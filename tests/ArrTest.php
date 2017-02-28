@@ -13,7 +13,7 @@ class ArrTest extends TestCase
         $array = [
             'key.four' => 'Not four',
             'key.one'  => 'One',
-            'key.two'  => 'Two',   
+            'key.two'  => 'Two',
             // moving 'Not four' here with replaced value to 'Four'
             // and inserting 'Three' here, before 'Four'
             'key.five' => 'Five'
