@@ -4,8 +4,6 @@ namespace Tests\Unit;
 
 use Dukhanin\Support\Arr;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class ArrTest extends TestCase
 {
