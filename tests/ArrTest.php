@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use Dukhanin\Support\Arr;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 class ArrTest extends TestCase
 {
