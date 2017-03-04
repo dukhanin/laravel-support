@@ -4,16 +4,21 @@ namespace Dukhanin\Support;
 use Illuminate\Support\Facades\Request;
 use TrueBV\Punycode;
 
+/**
+ * @todo @dukhanin resolve encoding problems with cyrillic hosts and
+ *       parse_url function
+ */
+
 class URLBuilder
 {
+
+    protected static $punycode;
 
     protected $caseSensitive;
 
     protected $components;
 
     protected $encoded;
-
-    protected static $punycode;
 
 
     public function __construct($url = null)
@@ -33,29 +38,100 @@ class URLBuilder
             'fragment' => null
         ];
 
-        if ( ! is_null($url)) {
+        if ( ! is_null($url) && ( $parsed = parse_url($url) )) {
             $this->components = array_merge($this->components, parse_url($url));
 
-            $this->components['query'] = $this->sanitizeQuery($this->components['query']);
-            $this->components['path']  = $this->sanitizePath($this->components['path']);
-            $this->components['host']  = $this->sanitizeHost($this->components['host']);
+            $this->components['scheme'] = $this->sanitizeScheme($this->components['scheme']);
+            $this->components['query']  = $this->sanitizeQuery($this->components['query']);
+            $this->components['path']   = $this->sanitizePath($this->components['path']);
+            $this->components['host']   = $this->sanitizeHost($this->components['host']);
         }
+    }
+
+
+    protected function sanitizeScheme($scheme)
+    {
+        return strtolower(preg_replace('#://$#', '', $scheme));
+    }
+
+
+    protected function sanitizeQuery($query)
+    {
+        if (is_string($query)) {
+            parse_str($query, $query);
+        } else {
+            $query = [ ];
+        }
+
+        return $query;
+    }
+
+
+    protected function sanitizePath($path)
+    {
+        if (is_array($path)) {
+            $path = implode('/', $this->sanitizeSegments($path));
+        }
+
+        return urldecode(trim(preg_replace('#/+#', '/', $path), '/'));
+    }
+
+
+    protected function sanitizeSegments($segments)
+    {
+        return array_filter($segments, function ($segment) {
+            return ! in_array($segment, [ '', null, false ], true);
+        });
+    }
+
+
+    protected function sanitizeHost($host)
+    {
+        return empty( $host ) ? false : $this->punycode()->decode($host);
+    }
+
+
+    public function punycode()
+    {
+        if (is_null(static::$punycode)) {
+            static::$punycode = new Punycode;
+        }
+
+        return static::$punycode;
     }
 
 
     public function caseSensitive($caseSensitive = null)
     {
+        if (is_null($caseSensitive)) {
+            return $this->caseSensitive;
+        }
+
         $this->caseSensitive = (bool) $caseSensitive;
 
         return $this;
     }
 
 
-    public function encoded($encoded = true)
+    public function encoded($encoded = null)
     {
+        if (is_null($encoded)) {
+            return $this->encoded;
+        }
+
         $this->encoded = (bool) $encoded;
 
         return $this;
+    }
+
+
+    public function secure($secure = null)
+    {
+        if (is_null($secure)) {
+            return $this->scheme() === 'https';
+        }
+
+        return $this->scheme($secure ? 'https' : 'http');
     }
 
 
@@ -71,12 +147,6 @@ class URLBuilder
     }
 
 
-    public function secure($secure = true)
-    {
-        return $this->scheme($secure ? 'https' : 'http');
-    }
-
-
     public function user($user = null)
     {
         if (is_null($user)) {
@@ -86,6 +156,12 @@ class URLBuilder
         $this->components['user'] = $this->sanitizeUser($user);
 
         return $this;
+    }
+
+
+    protected function sanitizeUser($user)
+    {
+        return $user === false ? false : strval($user);
     }
 
 
@@ -101,27 +177,21 @@ class URLBuilder
     }
 
 
-    public function path($path = null)
+    protected function sanitizePass($pass)
     {
-        if (is_null($path)) {
-            return $this->components['path'];
-        }
-
-        $this->components['path'] = $this->sanitizePath($path);
-
-        return $this;
-    }
-
-
-    public function segments()
-    {
-        return $this->sanitizeSegments(explode('/', $this->components['path']));
+        return $pass === false ? false : strval($pass);
     }
 
 
     public function segment($index)
     {
         return array_get($this->segments(), $index, false);
+    }
+
+
+    public function segments()
+    {
+        return $this->sanitizeSegments(explode('/', $this->components['path']));
     }
 
 
@@ -147,25 +217,31 @@ class URLBuilder
 
     public function shift($path = null)
     {
-        if ($path !== null) {
-            $this->shiftPath($path);
-        } else {
-            $this->shiftSegment();
+        if ( ! is_null($path)) {
+            return $this->shiftPath($path);
         }
 
-        return $this;
+        return $this->shiftSegment();
     }
 
 
     public function shiftPath($path)
     {
+        $path = $this->sanitizePath($path);
+
         $strict = mb_substr($path, -1) === '/';
 
         $path = $this->sanitizePath($path);
 
         $regexp = '#^' . preg_quote($path) . ( $strict ? '(/|$)' : '' ) . '#u' . ( $this->caseSensitive ? '' : 'i' );
 
+        if ( ! preg_match($regexp, $this->components['path'], $pock)) {
+            return false;
+        }
+
         $this->components['path'] = $this->sanitizePath(preg_replace($regexp, '', $this->components['path']));
+
+        return $pock[0];
     }
 
 
@@ -186,25 +262,31 @@ class URLBuilder
 
     public function pop($path = null)
     {
-        if ($path !== null) {
-            $this->popPath($path);
-        } else {
-            $this->popSegment();
+        if ( ! is_null($path)) {
+            return $this->popPath($path);
         }
 
-        return $this;
+        return $this->popSegment();
     }
 
 
     public function popPath($path)
     {
+        $path = $this->sanitizePath($path);
+
         $strict = mb_substr($path, 0, 1) === '/';
 
         $path = $this->sanitizePath($path);
 
         $regexp = '#' . ( $strict ? '(^|/)' : '' ) . preg_quote($path) . '$#u' . ( $this->caseSensitive ? '' : 'i' );
 
+        if ( ! preg_match($regexp, $this->components['path'], $pock)) {
+            return false;
+        }
+
         $this->components['path'] = $this->sanitizePath(preg_replace($regexp, '', $this->components['path']));
+
+        return $pock[0];
     }
 
 
@@ -247,16 +329,6 @@ class URLBuilder
     }
 
 
-    public function queryString()
-    {
-        if (empty( $this->components['query'] )) {
-            return '';
-        }
-
-        return http_build_query($this->components['query']);
-    }
-
-
     public function clearQuery()
     {
         $this->components['query'] = [ ];
@@ -274,6 +346,24 @@ class URLBuilder
         $this->components['fragment'] = $this->sanitizeFragment($fragment);
 
         return $this;
+    }
+
+
+    protected function sanitizeFragment($fragment)
+    {
+        return str_replace('#', '', $fragment);
+    }
+
+
+    public function copy()
+    {
+        return clone $this;
+    }
+
+
+    public function __toString()
+    {
+        return $this->compile();
     }
 
 
@@ -297,20 +387,14 @@ class URLBuilder
                 $url[] = '@';
             }
 
-            $url[] = $this->encoded ? $this->punycode()->encode($this->components['host']) : $this->components['host'];
+            $url[] = $this->host();
         }
 
-        if ( ! empty( $path = $this->components['path'] )) {
-            if ($this->encoded) {
-                $path = implode('/', array_map('urlencode', explode('/', $path)));
-            }
-
+        if ( ! empty( $path = $this->path() )) {
             $url[] = '/' . $path;
         }
 
         if ( ! empty( $query = $this->queryString() )) {
-            $query = $this->encoded ? $query : urldecode($query);
-
             $url[] = '?' . $query;
         }
 
@@ -318,90 +402,43 @@ class URLBuilder
             $url[] = '#' . $this->components['fragment'];
         }
 
-        $this->encoded = true;
-
         return implode($url);
     }
 
 
-    public function punycode()
+    public function host($host = null)
     {
-        if (is_null(static::$punycode)) {
-            static::$punycode = new Punycode;
+        if (is_null($host)) {
+            return $this->encoded ? $this->punycode()->encode($this->components['host']) : $this->components['host'];
         }
 
-        return static::$punycode;
+        $this->components['host'] = $this->sanitizeHost($host);
+
+        return $this;
     }
 
 
-    public function copy()
+    public function path($path = null)
     {
-        return clone $this;
-    }
-
-
-    public function __toString()
-    {
-        return $this->compile();
-    }
-
-
-    protected function sanitizeScheme($scheme)
-    {
-        return preg_replace('#://$#', '', $scheme);
-    }
-
-
-    protected function sanitizeUser($user)
-    {
-        return $user === false ? false : strval($user);
-    }
-
-
-    protected function sanitizePass($pass)
-    {
-        return $pass === false ? false : strval($pass);
-    }
-
-
-    protected function sanitizeHost($host)
-    {
-        return empty( $host ) ? false : $this->punycode()->decode($host);
-    }
-
-
-    protected function sanitizePath($path)
-    {
-        if (is_array($path)) {
-            $path = implode('/', $this->sanitizeSegments($path));
+        if (is_null($path)) {
+            return $this->encoded ? implode('/',
+                array_map('urlencode', explode('/', $this->components['path']))) : $this->components['path'];
         }
 
-        return urldecode(trim($path, '/'));
+        $this->components['path'] = $this->sanitizePath($path);
+
+        return $this;
     }
 
 
-    protected function sanitizeSegments($segments)
+    public function queryString()
     {
-        return array_filter($segments, function ($segment) {
-            return ! in_array($segment, [ '', null, false ], true);
-        });
-    }
-
-
-    protected function sanitizeQuery($query)
-    {
-        if (is_string($query)) {
-            parse_str($query, $query);
-        } else {
-            $query = [ ];
+        if (empty( $this->components['query'] )) {
+            return '';
         }
 
-        return $query;
-    }
+        $queryString = http_build_query($this->components['query']);
 
-
-    protected function sanitizeFragment($fragment)
-    {
-        return str_replace('#', '', $fragment);
+        return $this->encoded ? $queryString : urldecode($queryString);
     }
 }
