@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use Dukhanin\Support\ExtendedCollection;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 class ExtendedCollectionTest extends TestCase
 {
