@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use Dukhanin\Support\URLBuilder;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 class URLBuilderTest extends TestCase
 {
@@ -11,7 +11,6 @@ class URLBuilderTest extends TestCase
     public function testCompile()
     {
         $url = new URLBuilder('http://dukhanin:testPass@antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment');
-
         $this->assertTrue($url->compile() === 'http://dukhanin:testPass@antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment');
 
         $url = new URLBuilder();
@@ -36,16 +35,40 @@ class URLBuilderTest extends TestCase
     }
 
 
-    public function _testEncoded()
+    public function testEncoded()
     {
+        $url1 = new URLBuilder('http://духанин.рф/Один/Два?query=value#fragment');
+        $url2 = new URLBuilder('http://xn--80ahntb6ao.xn--p1ai/%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0?query=value#fragment');
 
-        /**
-         * @todo @dukhanin resolve encoding problems with cyrillic hosts and
-         *       parse_url function
-         */
+        $url1->encoded(false);
+        $url2->encoded(false);
 
-        $url = new URLBuilder('http://духанин.рф/test');
-        $url->encoded(false)->host();
+        $this->assertTrue($url1->encoded() === false);
+        $this->assertTrue($url2->encoded() === false);
+
+        $this->assertTrue($url1->host() === 'духанин.рф');
+        $this->assertTrue($url2->host() === 'духанин.рф');
+
+        $this->assertTrue($url1->path() === 'Один/Два');
+        $this->assertTrue($url2->path() === 'Один/Два');
+
+        $this->assertTrue($url1->compile() === 'http://духанин.рф/Один/Два?query=value#fragment');
+        $this->assertTrue($url2->compile() === 'http://духанин.рф/Один/Два?query=value#fragment');
+
+        $url1->encoded(true);
+        $url2->encoded(true);
+
+        $this->assertTrue($url1->encoded() === true);
+        $this->assertTrue($url2->encoded() === true);
+
+        $this->assertTrue($url1->host() === 'xn--80ahntb6ao.xn--p1ai');
+        $this->assertTrue($url2->host() === 'xn--80ahntb6ao.xn--p1ai');
+
+        $this->assertTrue($url1->path() === '%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0');
+        $this->assertTrue($url2->path() === '%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0');
+
+        $this->assertTrue($url1->compile() === 'http://xn--80ahntb6ao.xn--p1ai/%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0?query=value#fragment');
+        $this->assertTrue($url2->compile() === 'http://xn--80ahntb6ao.xn--p1ai/%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0?query=value#fragment');
 
     }
 
@@ -337,22 +360,50 @@ class URLBuilderTest extends TestCase
 
     public function testQuery()
     {
+        $url = new URLBuilder('http://antondukhanin.ru/One/Two?query1=value1');
+
+        $url->query([ 'query2' => 'value2' ]);
+
+        $this->assertTrue($url->query('query1') === 'value1');
+        $this->assertTrue($url->query('query2') === 'value2');
+        $this->assertTrue($url->query() === [
+                'query1' => 'value1',
+                'query2' => 'value2'
+            ]);
+
+        $url->query(false);
+
+        $this->assertTrue($url->query() === []);
     }
 
 
     public function testPunycode()
     {
+        $punycode = (new URLBuilder())->punycode();
+
+        $this->assertTrue($punycode->encode('духанин.рф') === 'xn--80ahntb6ao.xn--p1ai');
+        $this->assertTrue($punycode->decode('xn--80ahntb6ao.xn--p1ai') === 'духанин.рф');
     }
 
 
     public function testCopy()
     {
+        $url1 = new URLBuilder('http://antondukhanin.ru/One/Two?query1=value1');
 
+        $url2 = $url1->copy();
+
+        $this->assertTrue($url1->compile() === $url2->compile());
+
+        $url1->query(false);
+
+        $this->assertTrue($url1->compile() !== $url2->compile());
     }
 
 
     public function testToString()
     {
+        $url = new URLBuilder('http://antondukhanin.ru/One/Two?query1=value1');
 
+        $this->assertTrue($url->__toString() === 'http://antondukhanin.ru/One/Two?query1=value1');
     }
 }
