@@ -33,6 +33,16 @@ class ArrTest extends TestCase
     }
 
 
+    public function testBeforeOnUndefinedVariable()
+    {
+        Arr::before($array, 'key.one', 'One');
+
+        $this->assertTrue($array === [
+                'key.one' => 'One',
+            ]);
+    }
+
+
     public function testAfter()
     {
         $array = [
@@ -54,6 +64,16 @@ class ArrTest extends TestCase
                 'key.three' => 'Three',
                 'key.four'  => 'Four',
                 'key.five'  => 'Five'
+            ]);
+    }
+
+
+    public function testAfterOnUndefinedVariable()
+    {
+        Arr::after($array, 'key.one', 'One');
+
+        $this->assertTrue($array === [
+                'key.one' => 'One',
             ]);
     }
 
