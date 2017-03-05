@@ -119,6 +119,7 @@ class ExtendedCollectionTest extends TestCase
         $this->assertTrue($collection['one'] === 'One');
         $this->assertTrue($collection['two'] === 'Two-resolved');
         $this->assertTrue($collection['three'] === 'Three-resolved');
+        $this->assertTrue($collection[0] === 'Four-resolved');
 
         $this->assertTrue($collection->raw()['one'] === 'One');
         $this->assertTrue($collection->raw()['two'] === 'Two');
