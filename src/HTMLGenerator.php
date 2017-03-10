@@ -33,7 +33,7 @@ class HTMLGenerator
     public function renderAttributes($attributes)
     {
         $this->validateAttributes($attributes);
-        $html = [ ];
+        $html = [];
 
         foreach ($attributes as $key => $value) {
             if (is_null($value) || ! is_scalar($value)) {
@@ -68,7 +68,7 @@ class HTMLGenerator
         }
 
         $attributes = $this->renderAttributes($this->attributes($tag));
-        $attributes = empty( $attributes ) ? '' : ' ' . $attributes;
+        $attributes = empty($attributes) ? '' : ' ' . $attributes;
 
         if ($tagType === 'singular' || ( $tagType === 'auto' && $tag['content'] === null && $tagOpen && $tagClose )) {
             return "<{$tag['tag-name']}{$attributes} />";
@@ -164,7 +164,7 @@ class HTMLGenerator
         }
 
         if ( ! is_array($tag)) {
-            $tag = [ ];
+            $tag = [];
         }
 
         if ( ! array_has($tag, 'tag-name')) {
@@ -181,7 +181,7 @@ class HTMLGenerator
             }
 
             array_set($tag, $key, $value);
-            unset( $tag[$key] );
+            unset($tag[$key]);
         }
 
         $this->validateContent($tag['tag-name']);
@@ -220,7 +220,7 @@ class HTMLGenerator
     public function validateAttributes(&$attributes)
     {
         if ( ! is_array($attributes)) {
-            $attributes = [ ];
+            $attributes = [];
         }
 
         if ( ! array_has($attributes, 'class')) {
@@ -244,7 +244,7 @@ class HTMLGenerator
             $class = strval($class);
         }
 
-        if (empty( $class )) {
+        if (empty($class)) {
             $class = null;
         }
 
@@ -254,7 +254,7 @@ class HTMLGenerator
 
     public static function instance()
     {
-        if (empty( static::$instance )) {
+        if (empty(static::$instance)) {
             static::$instance = new static;
         }
 
@@ -292,8 +292,6 @@ class HTMLGenerator
         $this->preprocessIcon($tag);
 
         $this->preprocessUrl($tag);
-
-        $this->preprocessId($tag);
 
         return $tag;
     }
@@ -358,18 +356,6 @@ class HTMLGenerator
     }
 
 
-    protected function preprocessId(&$tag)
-    {
-        if ($id = array_get($tag, 'id') && array_get($tag, 'id') === null) {
-            array_set($tag, 'id', $id);
-        }
-
-        array_forget($tag, 'id');
-
-        return $tag;
-    }
-
-
     protected function preprocessData(&$tag)
     {
         return $tag;
@@ -380,9 +366,9 @@ class HTMLGenerator
     {
         $selector = strval($string);
         $selector = trim($selector);
-        list( $selector ) = explode(' ', $selector);
+        list($selector) = explode(' ', $selector);
 
-        $tag = [ ];
+        $tag = [];
 
         if (preg_match('/^([a-z0-9-_]+)/', $selector, $pock)) {
             array_set($tag, 'tag-name', $pock[1]);
