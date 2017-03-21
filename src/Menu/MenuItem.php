@@ -105,9 +105,10 @@ class MenuItem
 
         if (!is_null($item->url)) {
             $currentPath = trim(Request::path(), '/');
+
             $path = trim(parse_url($item->url, PHP_URL_PATH), '/');
 
-            return starts_with($currentPath, $path);
+            return $currentPath == $path || starts_with($currentPath, $path);
         }
 
         return false;
