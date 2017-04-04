@@ -4,49 +4,26 @@ namespace Dukhanin\Support;
 
 class HTMLGenerator
 {
-
     protected static $instance;
 
+    public static function instance()
+    {
+        if (empty(static::$instance)) {
+            static::$instance = new static;
+        }
+
+        return static::$instance;
+    }
 
     public function openTag($tag, ...$overwrites)
     {
         $overwrites[] = [
-            'tag-open'  => true,
-            'tag-close' => false
+            'tag-open' => true,
+            'tag-close' => false,
         ];
 
         return $this->renderTag($tag, ...$overwrites);
     }
-
-
-    public function closeTag($tag, ...$overwrites)
-    {
-        $overwrites[] = [
-            'tag-open'  => false,
-            'tag-close' => true
-        ];
-
-        return $this->renderTag($tag, ...$overwrites);
-    }
-
-
-    public function renderAttributes($attributes)
-    {
-        $this->validateAttributes($attributes);
-        $html = [];
-
-        foreach ($attributes as $key => $value) {
-            if (is_null($value) || ! is_scalar($value)) {
-                continue;
-            }
-
-            $value  = str_replace("'", "\\'", strval($value));
-            $html[] = "{$key}='{$value}'";
-        }
-
-        return implode(" ", $html);
-    }
-
 
     public function renderTag($tag, ...$overwrites)
     {
@@ -56,7 +33,7 @@ class HTMLGenerator
 
         $this->validateTagName($tag['tag-name']);
 
-        $tagOpen  = ! array_get($tag, 'tag-close');
+        $tagOpen = ! array_get($tag, 'tag-close');
         $tagClose = ! array_get($tag, 'tag-open');
 
         if (array_get($tag, 'tag-plural')) {
@@ -68,9 +45,9 @@ class HTMLGenerator
         }
 
         $attributes = $this->renderAttributes($this->attributes($tag));
-        $attributes = empty($attributes) ? '' : ' ' . $attributes;
+        $attributes = empty($attributes) ? '' : ' '.$attributes;
 
-        if ($tagType === 'singular' || ( $tagType === 'auto' && $tag['content'] === null && $tagOpen && $tagClose )) {
+        if ($tagType === 'singular' || ($tagType === 'auto' && $tag['content'] === null && $tagOpen && $tagClose)) {
             return "<{$tag['tag-name']}{$attributes} />";
         }
 
@@ -82,15 +59,8 @@ class HTMLGenerator
             $tagClose = "</{$tag['tag-name']}>";
         }
 
-        return $tagOpen . ( $tagOpen && $tagClose ? $this->renderContent(array_get($tag, 'content')) : '' ) . $tagClose;
+        return $tagOpen.($tagOpen && $tagClose ? $this->renderContent(array_get($tag, 'content')) : '').$tagClose;
     }
-
-
-    public function renderContent($content)
-    {
-        return strval($content);
-    }
-
 
     public function merge($tag, ...$overwrites)
     {
@@ -118,65 +88,26 @@ class HTMLGenerator
         return $tag;
     }
 
-
-    public function addClass(&$tag, $class)
-    {
-        $this->validateTag($tag);
-
-        $this->validateClass($class);
-
-        $tagClass = array_get($tag, 'class');
-
-        array_set($tag, 'class', trim($tagClass . ' ' . $class));
-
-        return $tag;
-    }
-
-
-    public function append(&$tag, $content)
-    {
-        $this->validateTag($tag);
-
-        $this->validateContent($content);
-
-        $tag['content'] .= $content;
-
-        return $tag;
-    }
-
-
-    public function prepend(&$tag, $content)
-    {
-        $this->validateTag($tag);
-
-        $this->validateContent($content);
-
-        $tag['content'] = $content . $tag['content'];
-
-        return $tag;
-    }
-
-
     public function validateTag(&$tag)
     {
         if (is_string($tag)) {
             $tag = $this->stringToTag($tag);
         }
 
-        if ( ! is_array($tag)) {
+        if (! is_array($tag)) {
             $tag = [];
         }
 
-        if ( ! array_has($tag, 'tag-name')) {
+        if (! array_has($tag, 'tag-name')) {
             array_set($tag, 'tag-name', null);
         }
 
-        if ( ! array_has($tag, 'content')) {
+        if (! array_has($tag, 'content')) {
             array_set($tag, 'content', null);
         }
 
         foreach ($tag as $key => $value) {
-            if ( ! str_contains($key, '.')) {
+            if (! str_contains($key, '.')) {
                 continue;
             }
 
@@ -191,47 +122,41 @@ class HTMLGenerator
         return $tag;
     }
 
-
-    public function validateTagName(&$tagName)
+    protected function stringToTag($string)
     {
-        if ( ! is_string($tagName) || trim($tagName) == '') {
-            $tagName = 'span';
+        $selector = strval($string);
+        $selector = trim($selector);
+        list($selector) = explode(' ', $selector);
+
+        $tag = [];
+
+        if (preg_match('/^([a-z0-9-_]+)/', $selector, $pock)) {
+            array_set($tag, 'tag-name', $pock[1]);
         }
 
-        $tagName = trim($tagName);
-        $tagName = strtolower($tagName);
+        if (preg_match('/#([a-z0-9-_]+)/', $selector, $pock)) {
+            array_set($tag, 'id', $pock[1]);
+        }
 
-        return $tagName;
+        if (preg_match_all('/\.([a-z0-9-_]+)/', $selector, $pock)) {
+            $this->addClass($tag, $pock[1]);
+        }
+
+        return $tag;
     }
 
-
-    public function validateContent(&$content)
+    public function addClass(&$tag, $class)
     {
-        if (is_array($content)) {
-            return $this->renderTag($content);
-        }
+        $this->validateTag($tag);
 
-        $content = value($content);
+        $this->validateClass($class);
 
-        return $content;
+        $tagClass = array_get($tag, 'class');
+
+        array_set($tag, 'class', trim($tagClass.' '.$class));
+
+        return $tag;
     }
-
-
-    public function validateAttributes(&$attributes)
-    {
-        if ( ! is_array($attributes)) {
-            $attributes = [];
-        }
-
-        if ( ! array_has($attributes, 'class')) {
-            array_set($attributes, 'class', null);
-        }
-
-        $this->validateClass($attributes['class']);
-
-        return $attributes;
-    }
-
 
     public function validateClass(&$class)
     {
@@ -251,39 +176,31 @@ class HTMLGenerator
         return $class;
     }
 
-
-    public static function instance()
+    public function validateContent(&$content)
     {
-        if (empty(static::$instance)) {
-            static::$instance = new static;
+        if (is_array($content)) {
+            return $this->renderTag($content);
         }
 
-        return static::$instance;
+        $content = value($content);
+
+        return $content;
     }
 
-
-    protected function attributes(array $tag)
+    public function validateAttributes(&$attributes)
     {
-        $attributes = array_except($tag, [
-            'tag-name',
-            'tag-plural',
-            'tag-singular',
-            'tag-close',
-            'tag-open',
-            'content',
-            'data',
-            'meta'
-        ]);
-
-        if (is_array($data = array_get($tag, 'data'))) {
-            foreach ($data as $key => $value) {
-                $attributes["data-{$key}"] = $value;
-            }
+        if (! is_array($attributes)) {
+            $attributes = [];
         }
+
+        if (! array_has($attributes, 'class')) {
+            array_set($attributes, 'class', null);
+        }
+
+        $this->validateClass($attributes['class']);
 
         return $attributes;
     }
-
 
     protected function preprocess(&$tag)
     {
@@ -296,11 +213,10 @@ class HTMLGenerator
         return $tag;
     }
 
-
     protected function preprocessTitle(&$tag)
     {
         if ($title = array_get($tag, 'label', array_get($tag, 'title'))) {
-            if ( ! array_get($tag, 'icon-only') && ( array_get($tag, 'content') === null )) {
+            if (! array_get($tag, 'icon-only') && (array_get($tag, 'content') === null)) {
                 $this->append($tag, $title);
             }
 
@@ -314,6 +230,16 @@ class HTMLGenerator
         return $tag;
     }
 
+    public function append(&$tag, $content)
+    {
+        $this->validateTag($tag);
+
+        $this->validateContent($content);
+
+        $tag['content'] .= $content;
+
+        return $tag;
+    }
 
     protected function preprocessIcon(&$tag)
     {
@@ -336,16 +262,26 @@ class HTMLGenerator
             $this->prepend($tag, " <i class='{$icon}' ></i> ");
         }
 
-        array_forget($tag, [ 'icon-only', 'icon' ]);
+        array_forget($tag, ['icon-only', 'icon']);
 
         return $tag;
     }
 
+    public function prepend(&$tag, $content)
+    {
+        $this->validateTag($tag);
+
+        $this->validateContent($content);
+
+        $tag['content'] = $content.$tag['content'];
+
+        return $tag;
+    }
 
     protected function preprocessUrl(&$tag)
     {
         if ($url = array_get($tag, 'url')) {
-            if (in_array(array_get($tag, 'tag-name'), [ null, 'a' ], true) && array_get($tag, 'href') === null) {
+            if (in_array(array_get($tag, 'tag-name'), [null, 'a'], true) && array_get($tag, 'href') === null) {
                 array_set($tag, 'tag-name', 'a');
                 array_set($tag, 'href', $url);
                 array_forget($tag, 'url');
@@ -355,33 +291,74 @@ class HTMLGenerator
         return $tag;
     }
 
+    public function validateTagName(&$tagName)
+    {
+        if (! is_string($tagName) || trim($tagName) == '') {
+            $tagName = 'span';
+        }
+
+        $tagName = trim($tagName);
+        $tagName = strtolower($tagName);
+
+        return $tagName;
+    }
+
+    public function renderAttributes($attributes)
+    {
+        $this->validateAttributes($attributes);
+        $html = [];
+
+        foreach ($attributes as $key => $value) {
+            if (is_null($value) || ! is_scalar($value)) {
+                continue;
+            }
+
+            $value = str_replace("'", "\\'", strval($value));
+            $html[] = "{$key}='{$value}'";
+        }
+
+        return implode(" ", $html);
+    }
+
+    protected function attributes(array $tag)
+    {
+        $attributes = array_except($tag, [
+            'tag-name',
+            'tag-plural',
+            'tag-singular',
+            'tag-close',
+            'tag-open',
+            'content',
+            'data',
+            'meta',
+        ]);
+
+        if (is_array($data = array_get($tag, 'data'))) {
+            foreach ($data as $key => $value) {
+                $attributes["data-{$key}"] = $value;
+            }
+        }
+
+        return $attributes;
+    }
+
+    public function renderContent($content)
+    {
+        return strval($content);
+    }
+
+    public function closeTag($tag, ...$overwrites)
+    {
+        $overwrites[] = [
+            'tag-open' => false,
+            'tag-close' => true,
+        ];
+
+        return $this->renderTag($tag, ...$overwrites);
+    }
 
     protected function preprocessData(&$tag)
     {
-        return $tag;
-    }
-
-
-    protected function stringToTag($string)
-    {
-        $selector = strval($string);
-        $selector = trim($selector);
-        list($selector) = explode(' ', $selector);
-
-        $tag = [];
-
-        if (preg_match('/^([a-z0-9-_]+)/', $selector, $pock)) {
-            array_set($tag, 'tag-name', $pock[1]);
-        }
-
-        if (preg_match('/#([a-z0-9-_]+)/', $selector, $pock)) {
-            array_set($tag, 'id', $pock[1]);
-        }
-
-        if (preg_match_all('/\.([a-z0-9-_]+)/', $selector, $pock)) {
-            $this->addClass($tag, $pock[1]);
-        }
-
         return $tag;
     }
 }

@@ -10,7 +10,6 @@ trait BeforeAndAfterCollection
         return $this;
     }
 
-
     public function after($key, $value, $afterKey = null)
     {
         array_after($this->items, $key, $value, $afterKey);

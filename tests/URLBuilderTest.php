@@ -7,7 +7,6 @@ use PHPUnit\Framework\TestCase;
 
 class URLBuilderTest extends TestCase
 {
-
     public function testCompile()
     {
         $url = new URLBuilder('http://dukhanin:testPass@antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment');
@@ -16,12 +15,11 @@ class URLBuilderTest extends TestCase
         $url = new URLBuilder();
         $url->scheme('http')->user('dukhanin')->pass('testPass')->host('antondukhanin.ru')->path('One/Two')->query([
             'query1' => 'value1',
-            'query2' => 'value2'
+            'query2' => 'value2',
         ])->fragment('fragment');
 
         $this->assertTrue($url->compile() === 'http://dukhanin:testPass@antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment');
     }
-
 
     public function testCaseSensitive()
     {
@@ -33,7 +31,6 @@ class URLBuilderTest extends TestCase
         $url->caseSensitive(false);
         $this->assertTrue($url->caseSensitive() === false);
     }
-
 
     public function testEncoded()
     {
@@ -69,9 +66,7 @@ class URLBuilderTest extends TestCase
 
         $this->assertTrue($url1->compile() === 'http://xn--80ahntb6ao.xn--p1ai/%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0?query=value#fragment');
         $this->assertTrue($url2->compile() === 'http://xn--80ahntb6ao.xn--p1ai/%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0?query=value#fragment');
-
     }
-
 
     public function testScheme()
     {
@@ -83,7 +78,6 @@ class URLBuilderTest extends TestCase
 
         $this->assertTrue($url->scheme() === 'https');
     }
-
 
     public function testFragment()
     {
@@ -97,7 +91,6 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two?query=value#fragment');
     }
 
-
     public function testSecure()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query=value#fragment');
@@ -110,7 +103,6 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->scheme() === 'https');
     }
 
-
     public function testUser()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query=value#fragment');
@@ -119,7 +111,6 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->user() === 'dukhanin');
         $this->assertTrue($url->compile() === 'http://dukhanin@antondukhanin.ru/One/Two?query=value#fragment');
     }
-
 
     public function testPass()
     {
@@ -130,7 +121,6 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->pass() === 'testPass');
         $this->assertTrue($url->compile() === 'http://dukhanin:testPass@antondukhanin.ru/One/Two?query=value#fragment');
     }
-
 
     public function testPath()
     {
@@ -150,21 +140,19 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->path() === 'One/Two');
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two?query=value#fragment');
 
-        $url->path([ 'One', 'Two', 'three' ]);
+        $url->path(['One', 'Two', 'three']);
         $this->assertTrue($url->path() === 'One/Two/three');
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two/three?query=value#fragment');
 
         return $this;
     }
 
-
     public function testSegments()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query=value#fragment');
 
-        $this->assertTrue($url->segments() === [ 'One', 'Two' ]);
+        $this->assertTrue($url->segments() === ['One', 'Two']);
     }
-
 
     public function testSegment()
     {
@@ -174,7 +162,6 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->segment(1) === 'Two');
         $this->assertTrue($url->segment(2) === false);
     }
-
 
     public function testAppend()
     {
@@ -186,10 +173,9 @@ class URLBuilderTest extends TestCase
         $url->append('/Three/');
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two/Three?query=value#fragment');
 
-        $url->append([ '/Four', 'Five' ]);
+        $url->append(['/Four', 'Five']);
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
     }
-
 
     public function testPrepend()
     {
@@ -198,10 +184,9 @@ class URLBuilderTest extends TestCase
         $url->prepend('/Three//Four/');
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/Three/Four?query=value#fragment');
 
-        $url->prepend([ 'One/', '/Two/' ]);
+        $url->prepend(['One/', '/Two/']);
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two/Three/Four?query=value#fragment');
     }
-
 
     public function testShift()
     {
@@ -222,7 +207,6 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/Four/Five?query=value#fragment');
     }
 
-
     public function testShiftPath()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
@@ -235,7 +219,7 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/Three/Four/Five?query=value#fragment');
 
         // fetching first two path segments using an array as argument
-        $this->assertTrue($url->shiftPath([ 'Three', 'Four' ]) === 'Three/Four');
+        $this->assertTrue($url->shiftPath(['Three', 'Four']) === 'Three/Four');
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/Five?query=value#fragment');
 
         // testing caseSensitive mode
@@ -245,8 +229,8 @@ class URLBuilderTest extends TestCase
 
         $this->assertTrue($url->shiftPath('/one//two/') === false);
         $this->assertTrue($url->shiftPath('/One//Two/') === 'One/Two');
-        $this->assertTrue($url->shiftPath([ 'three', 'four' ]) === false);
-        $this->assertTrue($url->shiftPath([ 'Three', 'Four' ]) === 'Three/Four');
+        $this->assertTrue($url->shiftPath(['three', 'four']) === false);
+        $this->assertTrue($url->shiftPath(['Three', 'Four']) === 'Three/Four');
 
         // testing not caseSensitive mode
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
@@ -254,9 +238,8 @@ class URLBuilderTest extends TestCase
         $url->caseSensitive(false);
 
         $this->assertTrue($url->shiftPath('/one//two/') === 'One/Two');
-        $this->assertTrue($url->shiftPath([ 'three', 'four' ]) === 'Three/Four');
+        $this->assertTrue($url->shiftPath(['three', 'four']) === 'Three/Four');
     }
-
 
     public function testShiftSegment()
     {
@@ -265,7 +248,6 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->shiftSegment() === 'One');
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/Two?query=value#fragment');
     }
-
 
     public function testPop()
     {
@@ -286,7 +268,6 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two?query=value#fragment');
     }
 
-
     public function testPopPath()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
@@ -299,7 +280,7 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two/Three?query=value#fragment');
 
         // fetching first two path segments using an array as argument
-        $this->assertTrue($url->popPath([ 'Two', 'Three' ]) === 'Two/Three');
+        $this->assertTrue($url->popPath(['Two', 'Three']) === 'Two/Three');
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One?query=value#fragment');
 
         // testing caseSensitive mode
@@ -309,8 +290,8 @@ class URLBuilderTest extends TestCase
 
         $this->assertTrue($url->popPath('/four//five/') === false);
         $this->assertTrue($url->popPath('/Four//Five/') === 'Four/Five');
-        $this->assertTrue($url->popPath([ 'two', 'three' ]) === false);
-        $this->assertTrue($url->popPath([ 'Two', 'Three' ]) === 'Two/Three');
+        $this->assertTrue($url->popPath(['two', 'three']) === false);
+        $this->assertTrue($url->popPath(['Two', 'Three']) === 'Two/Three');
 
         // testing not caseSensitive mode
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
@@ -318,10 +299,8 @@ class URLBuilderTest extends TestCase
         $url->caseSensitive(false);
 
         $this->assertTrue($url->popPath('/four//five/') === 'Four/Five');
-        $this->assertTrue($url->popPath([ 'two', 'three' ]) === 'Two/Three');
-
+        $this->assertTrue($url->popPath(['two', 'three']) === 'Two/Three');
     }
-
 
     public function testPopSegment()
     {
@@ -330,7 +309,6 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->popSegment() === 'Two');
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One?query=value#fragment');
     }
-
 
     public function testQueryString()
     {
@@ -343,7 +321,6 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($url->queryString() === '');
     }
 
-
     public function testClearQuery()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment');
@@ -354,28 +331,25 @@ class URLBuilderTest extends TestCase
 
         $this->assertTrue($url->queryString() === '');
         $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two#fragment');
-
     }
-
 
     public function testQuery()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query1=value1');
 
-        $url->query([ 'query2' => 'value2' ]);
+        $url->query(['query2' => 'value2']);
 
         $this->assertTrue($url->query('query1') === 'value1');
         $this->assertTrue($url->query('query2') === 'value2');
         $this->assertTrue($url->query() === [
                 'query1' => 'value1',
-                'query2' => 'value2'
+                'query2' => 'value2',
             ]);
 
         $url->query(false);
 
         $this->assertTrue($url->query() === []);
     }
-
 
     public function testPunycode()
     {
@@ -384,7 +358,6 @@ class URLBuilderTest extends TestCase
         $this->assertTrue($punycode->encode('духанин.рф') === 'xn--80ahntb6ao.xn--p1ai');
         $this->assertTrue($punycode->decode('xn--80ahntb6ao.xn--p1ai') === 'духанин.рф');
     }
-
 
     public function testCopy()
     {
@@ -398,7 +371,6 @@ class URLBuilderTest extends TestCase
 
         $this->assertTrue($url1->compile() !== $url2->compile());
     }
-
 
     public function testToString()
     {

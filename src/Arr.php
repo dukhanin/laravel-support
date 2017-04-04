@@ -5,16 +5,14 @@ use Illuminate\Support\Arr as BaseArr;
 
 class Arr extends BaseArr
 {
-
     public static function beforeDotNotation(&$array, $key, $value, $keyBefore = null)
     {
         return static::beforeOrAfterDotNotation($array, $key, $value, $keyBefore);
     }
 
-
     protected static function beforeOrAfterDotNotation(&$array, $key, $value, $keyNeighbor = null, $after = false)
     {
-        if ( ! is_array($array)) {
+        if (! is_array($array)) {
             $array = [];
         }
 
@@ -22,26 +20,25 @@ class Arr extends BaseArr
             return $array = $after ? static::after($array, $key, $value) : static::before($array, $key, $value);
         }
 
-        $segments        = explode('.', $keyNeighbor);
+        $segments = explode('.', $keyNeighbor);
         $keyNeighborLast = array_pop($segments);
 
         if (count($segments) > 0) {
-            $leveledKey   = implode('.', $segments);
+            $leveledKey = implode('.', $segments);
             $leveledArray = array_get($array, $leveledKey);
 
-            if ( ! is_array($leveledArray)) {
+            if (! is_array($leveledArray)) {
                 return $array;
             }
         } else {
-            $leveledKey   = null;
+            $leveledKey = null;
             $leveledArray = $array;
         }
 
-        if ( ! array_key_exists($keyNeighborLast, $leveledArray)) {
+        if (! array_key_exists($keyNeighborLast, $leveledArray)) {
             array_forget($leveledArray, $key);
 
-            $leveledArray = $after ? array_set($leveledArray, $key, $value) : array_prepend($leveledArray, $value,
-                $key);
+            $leveledArray = $after ? array_set($leveledArray, $key, $value) : array_prepend($leveledArray, $value, $key);
 
             return $array = array_set($array, $leveledKey, $leveledArray);
         }
@@ -51,30 +48,21 @@ class Arr extends BaseArr
         }
 
         $keyNeighborIndex = array_search($keyNeighborLast, array_keys($leveledArray));
-        $sliceLength      = $keyNeighborIndex + ( $after ? 1 : 0 );
+        $sliceLength = $keyNeighborIndex + ($after ? 1 : 0);
 
-        $leveledArray = array_slice($leveledArray, 0, $sliceLength) + [ $key => $value ] + array_slice($leveledArray,
-                $sliceLength);
+        $leveledArray = array_slice($leveledArray, 0, $sliceLength) + [$key => $value] + array_slice($leveledArray, $sliceLength);
 
         return array_set($array, $leveledKey, $leveledArray);
     }
-
 
     public static function after(&$array, $key, $value, $keyAfter = null)
     {
         return static::beforeOrAfter($array, $key, $value, $keyAfter, true);
     }
 
-
-    public static function before(&$array, $key, $value, $keyBefore = null)
-    {
-        return static::beforeOrAfter($array, $key, $value, $keyBefore);
-    }
-
-
     protected static function beforeOrAfter(&$array, $key, $value, $keyNeighbor = null, $after = false)
     {
-        if ( ! is_array($array)) {
+        if (! is_array($array)) {
             $array = [];
         }
 
@@ -82,7 +70,7 @@ class Arr extends BaseArr
             if (is_null($key)) {
                 $after ? array_push($array, $value) : array_unshift($array, $value);
             } else {
-                $array = $after ? $array + [ $key => $value ] : [ $key => $value ] + $array;
+                $array = $after ? $array + [$key => $value] : [$key => $value] + $array;
             }
 
             return $array;
@@ -93,11 +81,15 @@ class Arr extends BaseArr
         }
 
         $keyNeighborIndex = array_search($keyNeighbor, array_keys($array));
-        $sliceLength      = $keyNeighborIndex + ( $after ? 1 : 0 );
+        $sliceLength = $keyNeighborIndex + ($after ? 1 : 0);
 
-        return $array = array_slice($array, 0, $sliceLength) + [ $key => $value ] + array_slice($array, $sliceLength);
+        return $array = array_slice($array, 0, $sliceLength) + [$key => $value] + array_slice($array, $sliceLength);
     }
 
+    public static function before(&$array, $key, $value, $keyBefore = null)
+    {
+        return static::beforeOrAfter($array, $key, $value, $keyBefore);
+    }
 
     public static function afterDotNotation(&$array, $key, $value, $keyAfter = null)
     {
