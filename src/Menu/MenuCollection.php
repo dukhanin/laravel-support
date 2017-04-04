@@ -6,11 +6,9 @@ use Illuminate\Support\Collection;
 
 class MenuCollection extends Collection
 {
-
     use ClearableCollection;
 
     public $itemClass = MenuItem::class;
-
 
     public function __construct($items = [])
     {
@@ -22,11 +20,11 @@ class MenuCollection extends Collection
 
     public function offsetSet($key, $value)
     {
-        $keySegments     = explode('.', $key);
+        $keySegments = explode('.', $key);
         $firstKeySegment = array_shift($keySegments);
 
         if ($keySegments) {
-            if ( ! $this->offsetExists($firstKeySegment)) {
+            if (! $this->offsetExists($firstKeySegment)) {
                 $this->put($firstKeySegment, []);
             }
 
@@ -38,7 +36,7 @@ class MenuCollection extends Collection
 
     public function offsetExists($key)
     {
-        $keySegments     = explode('.', $key);
+        $keySegments = explode('.', $key);
         $firstKeySegment = array_shift($keySegments);
 
         if ($keySegments && $this->offsetExists($firstKeySegment)) {
@@ -50,7 +48,7 @@ class MenuCollection extends Collection
 
     public function offsetGet($key)
     {
-        $keySegments     = explode('.', $key);
+        $keySegments = explode('.', $key);
         $firstKeySegment = array_shift($keySegments);
 
         if ($keySegments && $this->offsetExists($firstKeySegment)) {
@@ -63,7 +61,8 @@ class MenuCollection extends Collection
         }
     }
 
-    protected function resolve($item, $key) {
+    protected function resolve($item, $key)
+    {
         if ($item instanceof MenuItem) {
             return $item;
         }
@@ -104,7 +103,7 @@ class MenuCollection extends Collection
 
     public function offsetUnset($key)
     {
-        $keySegments     = explode('.', $key);
+        $keySegments = explode('.', $key);
         $firstKeySegment = array_shift($keySegments);
 
         if ($keySegments && $this->offsetExists($firstKeySegment)) {
@@ -121,15 +120,15 @@ class MenuCollection extends Collection
         }
 
         $keySegments = explode('.', $keyBefore);
-        $lastKey     = array_pop($keySegments);
-        $nestedKey   = implode('.', $keySegments);
+        $lastKey = array_pop($keySegments);
+        $nestedKey = implode('.', $keySegments);
 
         if ($nestedKey && $this->offsetExists($nestedKey)) {
             return $this->offsetGet($nestedKey)->items()->before($key, $value, $lastKey);
         }
 
-        $key         = str_replace('.', '_', $key);
-        $value       = $this->resolve($value, $key);
+        $key = str_replace('.', '_', $key);
+        $value = $this->resolve($value, $key);
         $this->items = array_before($this->items, $key, $value, $keyBefore);
 
         return $this;
@@ -142,15 +141,15 @@ class MenuCollection extends Collection
         }
 
         $keySegments = explode('.', $keyAfter);
-        $lastKey     = array_pop($keySegments);
-        $nestedKey   = implode('.', $keySegments);
+        $lastKey = array_pop($keySegments);
+        $nestedKey = implode('.', $keySegments);
 
         if ($nestedKey && $this->offsetExists($nestedKey)) {
             return $this->offsetGet($nestedKey)->items()->after($key, $value, $lastKey);
         }
 
-        $key         = str_replace('.', '_', $key);
-        $value       = $this->resolve($value, $key);
+        $key = str_replace('.', '_', $key);
+        $value = $this->resolve($value, $key);
         $this->items = array_after($this->items, $key, $value, $keyAfter);
 
         return $this;

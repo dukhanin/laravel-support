@@ -6,11 +6,9 @@ use Illuminate\Support\Facades\Route;
 
 class MenuItem
 {
-
     protected $items;
 
     protected $params = [];
-
 
     public function __construct($item)
     {
@@ -20,27 +18,27 @@ class MenuItem
             $item = ['label' => $item];
         }
 
-        if (!isset($item['active'])) {
+        if (! isset($item['active'])) {
             $item['active'] = [get_class($this), 'itemActive'];
         }
 
-        if (!isset($item['route'])) {
+        if (! isset($item['route'])) {
             $item['route'] = null;
         }
 
-        if (!isset($item['action'])) {
+        if (! isset($item['action'])) {
             $item['action'] = null;
         }
 
-        if (!isset($item['url'])) {
+        if (! isset($item['url'])) {
             $item['url'] = null;
         }
 
-        if (!isset($item['enabled'])) {
+        if (! isset($item['enabled'])) {
             $item['enabled'] = true;
         }
 
-        if (isset($item['items']) && !empty($subitems = $this->value($item['items']))) {
+        if (isset($item['items']) && ! empty($subitems = $this->value($item['items']))) {
             foreach ($subitems as $key => $subitem) {
                 $this->items()->put($key, $subitem);
             }
@@ -95,15 +93,15 @@ class MenuItem
 
     public static function itemActive($item)
     {
-        if (!is_null($item->route)) {
+        if (! is_null($item->route)) {
             return Route::current()->getName() == $item->route;
         }
 
-        if (!is_null($item->action)) {
+        if (! is_null($item->action)) {
             return ends_with(Route::current()->getActionName(), $item->action);
         }
 
-        if (!is_null($item->url)) {
+        if (! is_null($item->url)) {
             $currentPath = trim(Request::path(), '/');
 
             $path = trim(parse_url($item->url, PHP_URL_PATH), '/');
@@ -116,19 +114,19 @@ class MenuItem
 
     public function url()
     {
-        if (!is_null($this->params['url'])) {
+        if (! is_null($this->params['url'])) {
             return $this->value($this->params['url']);
         }
 
         if (is_array($route = $this->route)) {
             return route(array_shift($route), $route);
-        } elseif (!is_null($this->route)) {
+        } elseif (! is_null($this->route)) {
             return route($this->route);
         }
 
         if (is_array($action = $this->action)) {
             return action(array_shift($action), $action);
-        } elseif (!is_null($this->action)) {
+        } elseif (! is_null($this->action)) {
             return action($this->action);
         }
     }
@@ -137,7 +135,6 @@ class MenuItem
     {
         return $this->get($key);
     }
-
 
     public function __set($key, $value)
     {
@@ -170,5 +167,4 @@ class MenuItem
     {
         return $this->get($name);
     }
-
 }
