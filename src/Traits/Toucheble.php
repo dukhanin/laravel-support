@@ -1,7 +1,7 @@
 <?php
 namespace Dukhanin\Support\Traits;
 
-trait TouchebleCollection
+trait Toucheble
 {
 
     protected $touched = false;
