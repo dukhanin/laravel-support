@@ -2,28 +2,18 @@
 namespace Dukhanin\Support\Menu;
 
 use Dukhanin\Support\Traits\ClearableCollection;
-use Dukhanin\Support\Traits\ResolvedCollection;
 use Illuminate\Support\Collection;
 
 class MenuCollection extends Collection
 {
 
-    use ResolvedCollection, ClearableCollection;
+    use ClearableCollection;
 
     public $itemClass = MenuItem::class;
 
 
     public function __construct($items = [])
     {
-        $this->resolver(function ($item, $key) {
-            if ($item instanceof MenuItem) {
-                return $item;
-            }
-
-            $className = $this->itemClass;
-
-            return new $className($item);
-        });
 
         foreach ($this->getArrayableItems($items) as $key => $value) {
             $this->offsetSet($key, $value);
@@ -73,6 +63,16 @@ class MenuCollection extends Collection
         }
     }
 
+    protected function resolve($item, $key) {
+        if ($item instanceof MenuItem) {
+            return $item;
+        }
+
+        $className = $this->itemClass;
+
+        return new $className($item);
+    }
+
     public function enabled()
     {
         return $this->filter(function ($item) {
@@ -114,7 +114,6 @@ class MenuCollection extends Collection
         }
     }
 
-
     public function before($key, $value, $keyBefore = null)
     {
         if (is_null($keyBefore)) {
@@ -136,7 +135,6 @@ class MenuCollection extends Collection
         return $this;
     }
 
-
     public function after($key, $value, $keyAfter = null)
     {
         if (is_null($keyAfter)) {
@@ -157,5 +155,5 @@ class MenuCollection extends Collection
 
         return $this;
     }
-
 }
+
