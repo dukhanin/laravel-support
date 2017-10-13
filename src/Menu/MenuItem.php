@@ -38,13 +38,16 @@ class MenuItem
             $item['enabled'] = true;
         }
 
-        if (isset($item['items']) && ! empty($subitems = $this->value($item['items']))) {
-            foreach ($subitems as $key => $subitem) {
-                $this->items()->put($key, $subitem);
-            }
+        if (isset($item['items'])) {
 
-            unset($item['items']);
+            if (! empty($subitems = $this->value($item['items']))) {
+                foreach ($subitems as $key => $subitem) {
+                    $this->items()->put($key, $subitem);
+                }
+            }
         }
+
+        unset($item['items']);
 
         $this->set($item);
     }
@@ -115,7 +118,7 @@ class MenuItem
     public function url()
     {
         if (! is_null($this->params['url'])) {
-            return $this->value($this->params['url']);
+            return $this->params['url'];
         }
 
         if (is_array($route = $this->route)) {
@@ -131,9 +134,30 @@ class MenuItem
         }
     }
 
+    public function a($attributes = [])
+    {
+        return html_tag('a', [
+            'href' => $this->url(),
+            'content' => $this->label(),
+        ], $attributes);
+    }
+
     public function __get($key)
     {
         return $this->get($key);
+    }
+
+    public function raw($key)
+    {
+        $key = strval($key);
+
+        if (property_exists($this, $key) && $key !== 'params') {
+            return $this->{$key};
+        }
+
+        if (isset($this->params[$key])) {
+            return $this->params[$key];
+        }
     }
 
     public function __set($key, $value)
@@ -148,19 +172,6 @@ class MenuItem
         }
 
         return $this->value($this->raw($key));
-    }
-
-    public function raw($key)
-    {
-        $key = strval($key);
-
-        if (property_exists($this, $key) && $key !== 'params') {
-            return $this->{$key};
-        }
-
-        if (isset($this->params[$key])) {
-            return $this->params[$key];
-        }
     }
 
     public function __call($name, $arguments)

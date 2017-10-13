@@ -44,7 +44,7 @@ class HTMLGenerator
             $tagType = 'auto';
         }
 
-        $attributes = $this->renderAttributes($this->attributes($tag));
+        $attributes = $this->renderAttributes($tag);
         $attributes = empty($attributes) ? '' : ' '.$attributes;
 
         if ($tagType === 'singular' || ($tagType === 'auto' && $tag['content'] === null && $tagOpen && $tagClose)) {
@@ -215,7 +215,7 @@ class HTMLGenerator
 
     protected function preprocessTitle(&$tag)
     {
-        if ($title = array_get($tag, 'label', array_get($tag, 'title'))) {
+        if ($title = array_get($tag, 'label')) {
             if (! array_get($tag, 'icon-only') && (array_get($tag, 'content') === null)) {
                 $this->append($tag, $title);
             }
@@ -308,11 +308,12 @@ class HTMLGenerator
         $this->validateAttributes($attributes);
         $html = [];
 
-        foreach ($attributes as $key => $value) {
+        foreach ($this->attributes($attributes) as $key => $value) {
             if (is_null($value) || ! is_scalar($value)) {
                 continue;
             }
 
+            $key = ltrim($key, '\\');
             $value = str_replace("'", "\\'", strval($value));
             $html[] = "{$key}='{$value}'";
         }

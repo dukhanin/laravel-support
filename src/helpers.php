@@ -28,44 +28,44 @@ if (! function_exists('urlbuilder')) {
     }
 }
 
-if (! function_exists('html_generator')) {
-    function html_generator()
+if (! function_exists('html')) {
+    function html()
     {
-        return HTMLGenerator::instance();
+        return app(HTMLGenerator::class);
     }
 }
 
 if (! function_exists('html_tag')) {
     function html_tag(...$args)
     {
-        return html_generator()->renderTag(...$args);
+        return app(HTMLGenerator::class)->renderTag(...$args);
     }
 }
 
 if (! function_exists('html_tag_open')) {
     function html_tag_open(...$args)
     {
-        return html_generator()->openTag(...$args);
+        return app(HTMLGenerator::class)->openTag(...$args);
     }
 }
 
 if (! function_exists('html_tag_close')) {
     function html_tag_close(...$args)
     {
-        return html_generator()->closeTag(...$args);
+        return app(HTMLGenerator::class)->closeTag(...$args);
     }
 }
 
 if (! function_exists('html_tag_attr')) {
     function html_tag_attr(...$args)
     {
-        return html_generator()->renderAttributes(...$args);
+        return app(HTMLGenerator::class)->renderAttributes(...$args);
     }
 }
 
 if (! function_exists('html_tag_add_class')) {
     function html_tag_add_class(&$tag, ...$args)
     {
-        return html_generator()->addClass($tag, ...$args);
+        return app(HTMLGenerator::class)->addClass($tag, ...$args);
     }
 }

@@ -1,9 +1,7 @@
 <?php
 namespace Dukhanin\Support;
 
-use Illuminate\Support\Arr as BaseArr;
-
-class Arr extends BaseArr
+class Arr
 {
     public static function beforeDotNotation(&$array, $key, $value, $keyBefore = null)
     {

@@ -12,7 +12,6 @@ class MenuCollection extends Collection
 
     public function __construct($items = [])
     {
-
         foreach ($this->getArrayableItems($items) as $key => $value) {
             $this->offsetSet($key, $value);
         }
@@ -113,6 +112,11 @@ class MenuCollection extends Collection
         }
     }
 
+    public function prepend($value, $key = null)
+    {
+        return parent::prepend($this->resolve($value, $key), $key);
+    }
+
     public function before($key, $value, $keyBefore = null)
     {
         if (is_null($keyBefore)) {
@@ -153,6 +157,21 @@ class MenuCollection extends Collection
         $this->items = array_after($this->items, $key, $value, $keyAfter);
 
         return $this;
+    }
+
+    public function chunk($size)
+    {
+        if ($size <= 0) {
+            return new static;
+        }
+
+        $chunks = [];
+
+        foreach (array_chunk($this->items, $size, true) as $chunk) {
+            $chunks[] = new static($chunk);
+        }
+
+        return new Collection($chunks);
     }
 }
 
