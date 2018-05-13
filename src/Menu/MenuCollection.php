@@ -8,8 +8,19 @@ class MenuCollection extends Collection
 {
     use ClearableCollection;
 
-    public $itemClass = MenuItem::class;
+    /**
+     * Класс элементов меню, используемы в этой
+     * и внутренних коллекциях
+     *
+     * @var string
+     */
+    protected $itemClass = MenuItem::class;
 
+    /**
+     * MenuCollection constructor.
+     *
+     * @param array $items
+     */
     public function __construct($items = [])
     {
         foreach ($this->getArrayableItems($items) as $key => $value) {
@@ -17,6 +28,10 @@ class MenuCollection extends Collection
         }
     }
 
+    /**
+     * @param string|integer $key
+     * @param mixed $value
+     */
     public function offsetSet($key, $value)
     {
         $keySegments = explode('.', $key);
@@ -33,6 +48,11 @@ class MenuCollection extends Collection
         }
     }
 
+    /**
+     * @param string|integer $key
+     *
+     * @return bool
+     */
     public function offsetExists($key)
     {
         $keySegments = explode('.', $key);
@@ -45,6 +65,11 @@ class MenuCollection extends Collection
         }
     }
 
+    /**
+     * @param string|integer $key
+     *
+     * @return mixed
+     */
     public function offsetGet($key)
     {
         $keySegments = explode('.', $key);
@@ -60,17 +85,57 @@ class MenuCollection extends Collection
         }
     }
 
+    /**
+     * @param string $key
+     */
+    public function offsetUnset($key)
+    {
+        $keySegments = explode('.', $key);
+        $firstKeySegment = array_shift($keySegments);
+
+        if ($keySegments && $this->offsetExists($firstKeySegment)) {
+            parent::offsetGet($firstKeySegment)->items()->offsetUnset(implode('.', $keySegments));
+        } else {
+            parent::offsetUnset($key);
+        }
+    }
+
+    /**
+     * Установить класс для элементов меню
+     *
+     * @param string $class
+     */
+    public function setItemClass($class)
+    {
+        $this->itemClass = $class;
+    }
+
+    /**
+     * Получить объект элемента меню на основе данных
+     * из $item
+     *
+     * @param mixed $item
+     * @param string|integer $key
+     *
+     * @return mixed
+     */
     protected function resolve($item, $key)
     {
-        if ($item instanceof MenuItem) {
+        $className = $this->itemClass;
+
+        if ($item instanceof $className) {
             return $item;
         }
-
-        $className = $this->itemClass;
 
         return new $className($item);
     }
 
+    /**
+     * Отфильтровать текущий уровень меню, оставив в нем только
+     * enabled-элементы
+     *
+     * @return static
+     */
     public function enabled()
     {
         return $this->filter(function ($item) {
@@ -78,49 +143,59 @@ class MenuCollection extends Collection
         });
     }
 
+    /**
+     * Есть ли активные элементы?
+     *
+     * @return bool
+     */
     public function hasActive()
     {
-        foreach ($this as $item) {
-            if ($item->active || $item->items()->hasActive()) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->contains(function ($item) {
+            return $item->active || $item->items()->hasActive();
+        });
     }
 
+    /**
+     * Есть ли enabled-элементы?
+     *
+     * @return bool
+     */
     public function hasEnabled()
     {
-        foreach ($this as $item) {
-            if ($item->enabled || $item->items()->hasEnabled()) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->contains(function ($item) {
+            return $item->enabled || $item->items()->hasEnabled();
+        });
     }
 
-    public function offsetUnset($key)
-    {
-        $keySegments = explode('.', $key);
-        $firstKeySegment = array_shift($keySegments);
-
-        if ($keySegments && $this->offsetExists($firstKeySegment)) {
-            parent::offsetUnset($firstKeySegment)->items()->offsetUnset(implode('.', $keySegments));
-        } else {
-            parent::offsetUnset($key);
-        }
-    }
-
+    /**
+     * Добавить элемент меню в начала этой ветки
+     *
+     * @param mixed $value
+     * @param string|integer|null $key
+     *
+     * @return $this
+     */
     public function prepend($value, $key = null)
     {
         return parent::prepend($this->resolve($value, $key), $key);
     }
 
+    /**
+     * Добавить элемент меню $item в эту ветку с ключем $key
+     * до элемента с ключем $keyBefore
+     *
+     * Если $keyBefore не указан - элемент добавляется в начало.
+     *
+     * @param string|integer $key
+     * @param mixed $value
+     * @param string|integer|null $keyBefore
+     *
+     * @return $this|\Dukhanin\Support\Menu\MenuCollection
+     */
     public function before($key, $value, $keyBefore = null)
     {
         if (is_null($keyBefore)) {
-            return $this->prepend($key, $value);
+            return $this->prepend($value, $key);
         }
 
         $keySegments = explode('.', $keyBefore);
@@ -138,6 +213,18 @@ class MenuCollection extends Collection
         return $this;
     }
 
+    /**
+     * Добавить элемент меню $item в эту ветку с ключем $key
+     * после элемента с ключем $keyBefore
+     *
+     * Если $keyBefore не указан - элемент добавляется в конец.
+     *
+     * @param string|integer $key
+     * @param mixed $value
+     * @param string|integer|null $keyAfter
+     *
+     * @return $this
+     */
     public function after($key, $value, $keyAfter = null)
     {
         if (is_null($keyAfter)) {
@@ -159,19 +246,18 @@ class MenuCollection extends Collection
         return $this;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function chunk($size)
     {
-        if ($size <= 0) {
-            return new static;
-        }
-
-        $chunks = [];
+        $chunks = collect();
 
         foreach (array_chunk($this->items, $size, true) as $chunk) {
-            $chunks[] = new static($chunk);
+            $chunks->push(new self($chunk));
         }
 
-        return new Collection($chunks);
+        return $chunks;
     }
 }
 

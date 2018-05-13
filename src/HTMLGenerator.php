@@ -4,17 +4,15 @@ namespace Dukhanin\Support;
 
 class HTMLGenerator
 {
-    protected static $instance;
-
-    public static function instance()
-    {
-        if (empty(static::$instance)) {
-            static::$instance = new static;
-        }
-
-        return static::$instance;
-    }
-
+    /**
+     * Возвращает html-код открывающего тега $tag со всеми
+     * дополнительными параметрами из ...$overwrites
+     *
+     * @param mixed $tag
+     * @param array ...$overwrites
+     *
+     * @return string
+     */
     public function openTag($tag, ...$overwrites)
     {
         $overwrites[] = [
@@ -25,6 +23,34 @@ class HTMLGenerator
         return $this->renderTag($tag, ...$overwrites);
     }
 
+    /**
+     * Возвращает html-код закрывающего тега $tag со всеми
+     * дополнительными параметрами из ...$overwrites
+     *
+     * @param mixed $tag
+     * @param array ...$overwrites
+     *
+     * @return string
+     */
+    public function closeTag($tag, ...$overwrites)
+    {
+        $overwrites[] = [
+            'tag-open' => false,
+            'tag-close' => true,
+        ];
+
+        return $this->renderTag($tag, ...$overwrites);
+    }
+
+    /**
+     * Возвращает html-код тега $tag со всеми
+     * дополнительными параметрами из ...$overwrites
+     *
+     * @param mixed $tag
+     * @param array ...$overwrites
+     *
+     * @return string
+     */
     public function renderTag($tag, ...$overwrites)
     {
         $tag = $this->merge($tag, ...$overwrites);
@@ -62,6 +88,82 @@ class HTMLGenerator
         return $tagOpen.($tagOpen && $tagClose ? $this->renderContent(array_get($tag, 'content')) : '').$tagClose;
     }
 
+    /**
+     * Возвращает html-код аттрибутов для html-тега
+     *
+     * @param mixed $attributes
+     *
+     * @return string
+     */
+    public function renderAttributes($attributes)
+    {
+        $this->validateAttributes($attributes);
+        $html = [];
+
+        foreach ($this->attributes($attributes) as $key => $value) {
+            if (is_null($value) || ! is_scalar($value)) {
+                continue;
+            }
+
+            $key = ltrim($key, '\\');
+            $value = str_replace("'", "\\'", strval($value));
+            $html[] = "{$key}='{$value}'";
+        }
+
+        return implode(" ", $html);
+    }
+
+    /**
+     * Возвращает html-код содержимого $content
+     *
+     * @param mixed $content
+     *
+     * @return string
+     */
+    public function renderContent($content)
+    {
+        return strval($content);
+    }
+
+    /**
+     * Добавляет к содержимому тега $tag контент $content
+     *
+     * @param mixed $tag
+     * @param mixed $content
+     */
+    public function append(&$tag, $content)
+    {
+        $this->validateTag($tag);
+
+        $this->validateContent($content);
+
+        $tag['content'] .= $content;
+    }
+
+    /**
+     * Добавляет к содержимому тега $tag контент $content
+     * перед его уже существующим контентом
+     *
+     * @param mixed $tag
+     * @param mixed $content
+     */
+    public function prepend(&$tag, $content)
+    {
+        $this->validateTag($tag);
+
+        $this->validateContent($content);
+
+        $tag['content'] = $content.$tag['content'];
+    }
+
+    /**
+     * Перенакрывает настройки $tag указанынми в ...$overwrites
+     *
+     * @param mixed $tag
+     * @param array ...$overwrites
+     *
+     * @return array
+     */
     public function merge($tag, ...$overwrites)
     {
         $this->validateTag($tag);
@@ -88,6 +190,29 @@ class HTMLGenerator
         return $tag;
     }
 
+    /**
+     * Добавляет класс $class (или классы) к тегу $tag
+     *
+     * @param mixed $tag
+     * @param string|array $class
+     */
+    public function addClass(&$tag, $class)
+    {
+        $this->validateTag($tag);
+
+        $this->validateClass($class);
+
+        $tagClass = array_get($tag, 'class');
+
+        array_set($tag, 'class', trim($tagClass.' '.$class));
+    }
+
+    /**
+     * Преобразует содержимое переменной $tag в корректный
+     * массив, представляющий html-тег
+     *
+     * @param mixed $tag
+     */
     public function validateTag(&$tag)
     {
         if (is_string($tag)) {
@@ -118,75 +243,53 @@ class HTMLGenerator
         $this->validateContent($tag['tag-name']);
 
         $this->validateAttributes($attributes);
-
-        return $tag;
     }
 
-    protected function stringToTag($string)
+    /**
+     * Валидация tag-name. Если переменная $tagName
+     * пуста или не представляет имя тега - задается span
+     * по-умолчанию
+     *
+     * @param mixed $tagName
+     */
+    public function validateTagName(&$tagName)
     {
-        $selector = strval($string);
-        $selector = trim($selector);
-        list($selector) = explode(' ', $selector);
-
-        $tag = [];
-
-        if (preg_match('/^([a-z0-9-_]+)/', $selector, $pock)) {
-            array_set($tag, 'tag-name', $pock[1]);
+        if (! is_string($tagName) || trim($tagName) == '') {
+            $tagName = 'span';
         }
 
-        if (preg_match('/#([a-z0-9-_]+)/', $selector, $pock)) {
-            array_set($tag, 'id', $pock[1]);
-        }
-
-        if (preg_match_all('/\.([a-z0-9-_]+)/', $selector, $pock)) {
-            $this->addClass($tag, $pock[1]);
-        }
-
-        return $tag;
+        $tagName = trim($tagName);
+        $tagName = strtolower($tagName);
     }
 
-    public function addClass(&$tag, $class)
-    {
-        $this->validateTag($tag);
-
-        $this->validateClass($class);
-
-        $tagClass = array_get($tag, 'class');
-
-        array_set($tag, 'class', trim($tagClass.' '.$class));
-
-        return $tag;
-    }
-
+    /**
+     * Приводит содержимое переменной $class к
+     * валидному списку классов в виде строки
+     *
+     * @param string|array $class
+     */
     public function validateClass(&$class)
     {
-        if (is_array($class)) {
-            $class = array_flatten($class);
-            $class = array_map('strval', $class);
-            $class = array_map('trim', $class);
-            $class = implode(' ', $class);
-        } else {
-            $class = strval($class);
-        }
+        $class = is_array($class) ? $class : [$class];
 
-        if (empty($class)) {
-            $class = null;
-        }
+        $class = array_flatten($class);
+        $class = array_map('strval', $class);
+        $class = array_map('trim', $class);
+        $class = array_filter($class);
+        $class = array_unique($class);
+        $class = implode(' ', $class);
 
-        return $class;
+        $class = empty($class) ? null : $class;
     }
 
-    public function validateContent(&$content)
-    {
-        if (is_array($content)) {
-            return $this->renderTag($content);
-        }
-
-        $content = value($content);
-
-        return $content;
-    }
-
+    /**
+     * Приводит содержимое переменной $attributes к
+     * валидному списку аттрибутов в виде массива,
+     * включая специфическую обработку аттрибута class (если
+     * он представлен).
+     *
+     * @param mixed $attributes
+     */
     public function validateAttributes(&$attributes)
     {
         if (! is_array($attributes)) {
@@ -198,22 +301,45 @@ class HTMLGenerator
         }
 
         $this->validateClass($attributes['class']);
-
-        return $attributes;
     }
 
-    protected function preprocess(&$tag)
+    /**
+     * Преобразует содержимое переменной $content в
+     * html-код
+     *
+     * @param string|array $content
+     */
+    public function validateContent(&$content)
+    {
+        if (is_array($content)) {
+            $content = $this->renderTag($content);
+        }
+
+        $content = value($content);
+    }
+
+    /**
+     * Запускает предрендеринговые обработки
+     * тега $tag
+     *
+     * @param array $tag
+     */
+    protected function preprocess(array &$tag)
     {
         $this->preprocessTitle($tag);
 
         $this->preprocessIcon($tag);
 
         $this->preprocessUrl($tag);
-
-        return $tag;
     }
 
-    protected function preprocessTitle(&$tag)
+    /**
+     * Предрендеринговая инициализация и обработка
+     * полей title, label
+     *
+     * @param array $tag
+     */
+    protected function preprocessTitle(array &$tag)
     {
         if ($title = array_get($tag, 'label')) {
             if (! array_get($tag, 'icon-only') && (array_get($tag, 'content') === null)) {
@@ -226,22 +352,16 @@ class HTMLGenerator
         }
 
         array_forget($tag, 'label');
-
-        return $tag;
     }
 
-    public function append(&$tag, $content)
-    {
-        $this->validateTag($tag);
-
-        $this->validateContent($content);
-
-        $tag['content'] .= $content;
-
-        return $tag;
-    }
-
-    protected function preprocessIcon(&$tag)
+    /**
+     * Предрендеринговая инициализация и обработка
+     * полей icon, icon-only для добавления к содержимому тега
+     * иконки и всплывающих к ней подсказок
+     *
+     * @param array $tag
+     */
+    protected function preprocessIcon(array &$tag)
     {
         if (array_get($tag, 'icon-only')) {
             $tag['content'] = null;
@@ -259,25 +379,18 @@ class HTMLGenerator
 
         if ($icon = array_get($tag, 'icon')) {
             $icon = strval($icon);
-            $this->prepend($tag, " <i class='{$icon}' ></i> ");
+            $this->prepend($tag, " <i class='{$icon}'></i> ");
         }
 
         array_forget($tag, ['icon-only', 'icon']);
-
-        return $tag;
     }
 
-    public function prepend(&$tag, $content)
-    {
-        $this->validateTag($tag);
-
-        $this->validateContent($content);
-
-        $tag['content'] = $content.$tag['content'];
-
-        return $tag;
-    }
-
+    /**
+     * Предрендеринговая инициализация и обработка
+     * полей url и href
+     *
+     * @param mixed $tag
+     */
     protected function preprocessUrl(&$tag)
     {
         if ($url = array_get($tag, 'url')) {
@@ -287,40 +400,16 @@ class HTMLGenerator
                 array_forget($tag, 'url');
             }
         }
-
-        return $tag;
     }
 
-    public function validateTagName(&$tagName)
-    {
-        if (! is_string($tagName) || trim($tagName) == '') {
-            $tagName = 'span';
-        }
-
-        $tagName = trim($tagName);
-        $tagName = strtolower($tagName);
-
-        return $tagName;
-    }
-
-    public function renderAttributes($attributes)
-    {
-        $this->validateAttributes($attributes);
-        $html = [];
-
-        foreach ($this->attributes($attributes) as $key => $value) {
-            if (is_null($value) || ! is_scalar($value)) {
-                continue;
-            }
-
-            $key = ltrim($key, '\\');
-            $value = str_replace("'", "\\'", strval($value));
-            $html[] = "{$key}='{$value}'";
-        }
-
-        return implode(" ", $html);
-    }
-
+    /**
+     * Валидирует и возвращает валидный массив аттрибутов для тега
+     * $tag.
+     *
+     * @param array $tag
+     *
+     * @return array
+     */
     protected function attributes(array $tag)
     {
         $attributes = array_except($tag, [
@@ -343,23 +432,42 @@ class HTMLGenerator
         return $attributes;
     }
 
-    public function renderContent($content)
+    /**
+     * Разбирает и возвращает тег, основанный на разборе строки $string
+     * в виде css-селектора
+     *
+     * Метод разбирает только id, class и имя тега:
+     * <code>
+     * $this->stringToTag('a')
+     * $this->stringToTag('a.class1')
+     * $this->stringToTag('a#id1')
+     * $this->stringToTag('a#id1.class1.class2')
+     * </code>
+     *
+     * @param string $string
+     *
+     * @return array
+     */
+    protected function stringToTag($string)
     {
-        return strval($content);
-    }
+        $selector = strval($string);
+        $selector = trim($selector);
+        list($selector) = explode(' ', $selector);
 
-    public function closeTag($tag, ...$overwrites)
-    {
-        $overwrites[] = [
-            'tag-open' => false,
-            'tag-close' => true,
-        ];
+        $tag = [];
 
-        return $this->renderTag($tag, ...$overwrites);
-    }
+        if (preg_match('/^([a-z0-9-_]+)/', $selector, $pock)) {
+            array_set($tag, 'tag-name', $pock[1]);
+        }
 
-    protected function preprocessData(&$tag)
-    {
+        if (preg_match('/#([a-z0-9-_]+)/', $selector, $pock)) {
+            array_set($tag, 'id', $pock[1]);
+        }
+
+        if (preg_match_all('/\.([a-z0-9-_]+)/', $selector, $pock)) {
+            $this->addClass($tag, $pock[1]);
+        }
+
         return $tag;
     }
 }

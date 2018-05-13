@@ -1,86 +1,76 @@
 <?php
 namespace Dukhanin\Support;
 
+use Illuminate\Http\Request;
 use TrueBV\Punycode;
 
 class URLBuilder
 {
-    protected static $punycode;
-
-    protected static $request;
-
+    /**
+     * Учитывать / не учитывать регистр символов в операциях над path
+     *
+     * @var bool
+     */
     protected $caseSensitive;
 
+    /**
+     * Массив содержащий компоненты разобронного url:
+     * 'scheme'
+     * 'host'
+     * 'port'
+     * 'user'
+     * 'pass'
+     * 'path'
+     * 'query'
+     * 'fragment'
+     *
+     * @var array
+     */
     protected $components;
 
+    /**
+     * Находится ли url в состоянии encoded (будучи закодированным
+     * например, с помощью punycode или urlencode)
+     *
+     * @var bool
+     */
     protected $encoded;
 
+    /**
+     * Текущий request
+     *
+     * @var
+     */
+    protected static $request;
+
+    /**
+     * URLBuilder constructor.
+     *
+     * @param string|null $url
+     */
     public function __construct($url = null)
     {
-        if (empty(static::$request)) {
-            static::$request = request();
+        if (is_null(static::$request)) {
+            static::$request = Request::capture();
         }
 
         $this->caseSensitive = false;
 
         $this->encoded = true;
 
-        $this->components = [
-            'scheme' => static::$request->secure() ? 'https' : 'http',
-            'host' => null,
-            'port' => null,
-            'user' => null,
-            'pass' => null,
-            'path' => '',
-            'query' => [],
-            'fragment' => null,
-        ];
-
-        if (! is_null($url) && ($parsed = parse_url($url))) {
-            // $this->components = array_merge($this->components, parse_url($url));
-
-            if (preg_match('#(^.+://|^//|^)(.+?(:.+)?@)?(.*?)([/:\#\?]|$)#', $url, $pock)) {
-                $parsed['host'] = $pock[4];
-            }
-
-            if (preg_match('#/(.*?)([\?\#]|$)#', preg_replace('#(^.+://|^//)#', '', $url), $pock)) {
-                $parsed['path'] = $pock[1];
-            }
-
-            if (! empty($parsed['scheme'])) {
-                $this->scheme($parsed['scheme']);
-            }
-
-            if (! empty($parsed['host'])) {
-                $this->host($parsed['host']);
-            }
-
-            if (! empty($parsed['user'])) {
-                $this->user($parsed['user']);
-            }
-
-            if (! empty($parsed['pass'])) {
-                $this->pass($parsed['pass']);
-            }
-
-            if (! empty($parsed['path'])) {
-                $this->path($parsed['path']);
-            }
-
-            if (! empty($parsed['query'])) {
-                parse_str($parsed['query'], $parsed['query']);
-                $this->query($parsed['query']);
-            }
-
-            if (! empty($parsed['fragment'])) {
-                $this->fragment($parsed['fragment']);
-            }
-        }
+        $this->setUrl($url);
     }
 
+    /**
+     * Возвращает или устанавливает schme для текущего url
+     *
+     * @param string|null $scheme
+     *
+     * @return $this|mixed
+     */
     public function scheme($scheme = null)
     {
-        if (is_null($scheme)) {
+        if (func_num_args() === 0) {
             return $this->components['scheme'];
         }
 
@@ -89,14 +79,16 @@ class URLBuilder
         return $this;
     }
 
-    protected function sanitizeScheme($scheme)
-    {
-        return strtolower(preg_replace('#://$#', '', $scheme));
-    }
-
+    /**
+     * Возвращает или устанавливает хост для текущего url
+     *
+     * @param string|null $host
+     *
+     * @return $this|mixed
+     */
     public function host($host = null)
     {
-        if (is_null($host)) {
+        if (func_num_args() === 0) {
             return $this->encoded ? $this->punycode()->encode($this->components['host']) : $this->components['host'];
         }
 
@@ -105,27 +97,16 @@ class URLBuilder
         return $this;
     }
 
-    public function punycode()
-    {
-        if (is_null(static::$punycode)) {
-            static::$punycode = new Punycode;
-        }
-
-        return static::$punycode;
-    }
-
-    protected function sanitizeHost($host)
-    {
-        if (preg_match('/(^|\.)xn--/', $host)) {
-            $host = $this->punycode()->decode($host);
-        }
-
-        return $host;
-    }
-
+    /**
+     * Возвращает или устанавливает имя пользователя для текущего url
+     *
+     * @param string|null $user
+     *
+     * @return $this|mixed
+     */
     public function user($user = null)
     {
-        if (is_null($user)) {
+        if (func_num_args() === 0) {
             return $this->components['user'];
         }
 
@@ -134,14 +115,19 @@ class URLBuilder
         return $this;
     }
 
-    protected function sanitizeUser($user)
-    {
-        return $user === false ? false : strval($user);
-    }
-
+    /**
+     * Возвращает или устанавливает пароль для текущего url
+     *
+     * Пароль добвится к результирующему url только в случае
+     * указания имени пользователя
+     *
+     * @param string|null $pass
+     *
+     * @return $this|mixed
+     */
     public function pass($pass = null)
     {
-        if (is_null($pass)) {
+        if (func_num_args() === 0) {
             return $this->components['pass'];
         }
 
@@ -150,15 +136,18 @@ class URLBuilder
         return $this;
     }
 
-    protected function sanitizePass($pass)
-    {
-        return $pass === false ? false : strval($pass);
-    }
-
+    /**
+     * Возвращает или устанавливает path для текущего url
+     *
+     * @param string|array|null $path
+     *
+     * @return $this|mixed|string
+     */
     public function path($path = null)
     {
-        if (is_null($path)) {
-            return $this->encoded ? implode('/', array_map('urlencode', explode('/', $this->components['path']))) : $this->components['path'];
+        if (func_num_args() === 0) {
+            return $this->encoded ? implode('/',
+                array_map('urlencode', explode('/', $this->components['path']))) : $this->components['path'];
         }
 
         $this->components['path'] = $this->sanitizePath($path);
@@ -166,25 +155,29 @@ class URLBuilder
         return $this;
     }
 
-    protected function sanitizePath($path)
-    {
-        if (is_array($path)) {
-            $path = implode('/', $this->sanitizeSegments($path));
-        }
-
-        return urldecode(trim(preg_replace('#/+#', '/', $path), '/'));
-    }
-
-    protected function sanitizeSegments($segments)
-    {
-        return array_filter($segments, function ($segment) {
-            return ! in_array($segment, ['', null, false], true);
-        });
-    }
-
+    /**
+     * Возвращает или устанавливает get-переменные для текущего url
+     *
+     * Если не указано ни одного аттрибута - возвращает весь
+     * массив get-переменных текущего url
+     *
+     * Если указан только один аттрибут $key - возвращает значение
+     * get-переменной с ключем $key у текущего url
+     *
+     * Если первым аттрибутом указан false - сбрасывает все get-переменные
+     * для текущего url
+     *
+     * Если первый аттрибут представлен массивом - устанавливает все ключи
+     * и значения этого массива как get-переменные для текущего url
+     *
+     * @param string|array|false $key
+     * @param mixed $default
+     *
+     * @return $this|array|mixed|\Dukhanin\Support\URLBuilder
+     */
     public function query($key = null, $default = null)
     {
-        if (is_null($key)) {
+        if (func_num_args() === 0) {
             return $this->sanitizeQuery($this->components['query']);
         }
 
@@ -205,23 +198,33 @@ class URLBuilder
         return $this;
     }
 
-    protected function sanitizeQuery($query)
+    /**
+     * Возвращает сгенерированную строку, содержащую список переменных
+     * для текущего url
+     *
+     * @return string
+     */
+    public function queryString()
     {
-        return array_filter($query, function ($item) {
-            return ! is_null($item);
-        });
+        if (empty($this->components['query'])) {
+            return '';
+        }
+
+        $queryString = http_build_query($this->components['query']);
+
+        return $this->encoded ? $queryString : urldecode($queryString);
     }
 
-    public function clearQuery()
-    {
-        $this->components['query'] = [];
-
-        return $this;
-    }
-
+    /**
+     * Возвращает или устанавливает фрагмент (#) текущего url
+     *
+     * @param string|nuull $fragment
+     *
+     * @return $this|mixed
+     */
     public function fragment($fragment = null)
     {
-        if (is_null($fragment)) {
+        if (func_num_args() === 0) {
             return $this->components['fragment'];
         }
 
@@ -230,42 +233,13 @@ class URLBuilder
         return $this;
     }
 
-    protected function sanitizeFragment($fragment)
-    {
-        return str_replace('#', '', $fragment);
-    }
-
-    public function caseSensitive($caseSensitive = null)
-    {
-        if (is_null($caseSensitive)) {
-            return $this->caseSensitive;
-        }
-
-        $this->caseSensitive = (bool) $caseSensitive;
-
-        return $this;
-    }
-
-    public function encoded($encoded = null)
-    {
-        if (is_null($encoded)) {
-            return $this->encoded;
-        }
-
-        $this->encoded = (bool) $encoded;
-
-        return $this;
-    }
-
-    public function secure($secure = null)
-    {
-        if (is_null($secure)) {
-            return $this->scheme() === 'https';
-        }
-
-        return $this->scheme($secure ? 'https' : 'http');
-    }
-
+    /**
+     * Добавляет кусок $path в конец path текущего url
+     *
+     * @param string|array $path
+     *
+     * @return $this
+     */
     public function append($path)
     {
         $path = $this->sanitizePath($path);
@@ -275,6 +249,13 @@ class URLBuilder
         return $this;
     }
 
+    /**
+     * Добавляет кусок $path в начало path текущего url
+     *
+     * @param string|array $path
+     *
+     * @return $this
+     */
     public function prepend($path)
     {
         $path = $this->sanitizePath($path);
@@ -284,6 +265,17 @@ class URLBuilder
         return $this;
     }
 
+    /**
+     * Отрезает подстроку (string) или набор сегментов (array) $path
+     * от начала path текущего url, в случае если $path указан и найден
+     *
+     * Если $path не указан, отрезает первый сегмент
+     * path текущего url и возвращает его
+     *
+     * @param string|array|null $path
+     *
+     * @return string|null
+     */
     public function shift($path = null)
     {
         if (! is_null($path)) {
@@ -293,6 +285,14 @@ class URLBuilder
         return $this->shiftSegment();
     }
 
+    /**
+     * Отрезает подстроку (string) или набор сегментов (array) $path
+     * от начала path текущего url и возвращает его
+     *
+     * @param string|array $path
+     *
+     * @return string|null
+     */
     public function shiftPath($path)
     {
         $path = $this->sanitizePath($path);
@@ -302,7 +302,7 @@ class URLBuilder
         $regexp = '#^'.preg_quote($path).($strict ? '(/|$)' : '').'#u'.($this->caseSensitive ? '' : 'i');
 
         if (! preg_match($regexp, $this->components['path'], $pock)) {
-            return false;
+            return null;
         }
 
         $this->components['path'] = $this->sanitizePath(preg_replace($regexp, '', $this->components['path']));
@@ -310,6 +310,12 @@ class URLBuilder
         return $pock[0];
     }
 
+    /**
+     * Отрезает первый сегмент от path текущего url и
+     * возвращает его
+     *
+     * @return string|null
+     */
     public function shiftSegment()
     {
         $segment = null;
@@ -324,11 +330,27 @@ class URLBuilder
         return $segment;
     }
 
+    /**
+     * Возвращает список сегментов path текущего url
+     *
+     * @return array
+     */
     public function segments()
     {
         return $this->sanitizeSegments(explode('/', $this->components['path']));
     }
 
+    /**
+     * Отрезает подстроку (string) или набор сегментов (array) $path
+     * с конца path текущего url, в случае если $path указан и найден
+     *
+     * Если $path не указан, отрезает последний сегмент
+     * path текущего url и возвращает его
+     *
+     * @param string|array|null $path
+     *
+     * @return string|null
+     */
     public function pop($path = null)
     {
         if (! is_null($path)) {
@@ -338,6 +360,14 @@ class URLBuilder
         return $this->popSegment();
     }
 
+    /**
+     * Отрезает подстроку (string) или набор сегментов (array) $path
+     * с конца path текущего url, в случае если $path указан и найден
+     *
+     * @param mixed $path
+     *
+     * @return string|null
+     */
     public function popPath($path)
     {
         $path = $this->sanitizePath($path);
@@ -347,7 +377,7 @@ class URLBuilder
         $regexp = '#'.($strict ? '(^|/)' : '').preg_quote($path).'$#u'.($this->caseSensitive ? '' : 'i');
 
         if (! preg_match($regexp, $this->components['path'], $pock)) {
-            return false;
+            return null;
         }
 
         $this->components['path'] = $this->sanitizePath(preg_replace($regexp, '', $this->components['path']));
@@ -355,6 +385,12 @@ class URLBuilder
         return $pock[0];
     }
 
+    /**
+     * Отрезает последний сегмент от path текущего url и
+     * возвращает его
+     *
+     * @return string|null
+     */
     public function popSegment()
     {
         $segment = null;
@@ -369,21 +405,34 @@ class URLBuilder
         return $segment;
     }
 
+    /**
+     * Получить сегмент path текущего url по порядковому
+     * номеру $index (начиная с 0)
+     *
+     * @param int $index
+     *
+     * @return string|null
+     */
     public function segment($index)
     {
-        return array_get($this->segments(), $index, false);
+        return array_get($this->segments(), $index, null);
     }
 
+    /**
+     * Клонирует и возвращает текущий объект
+     *
+     * @return \Dukhanin\Support\URLBuilder
+     */
     public function copy()
     {
         return clone $this;
     }
 
-    public function __toString()
-    {
-        return $this->compile();
-    }
-
+    /**
+     * Возвращает сгенерированную url-строку
+     *
+     * @return string
+     */
     public function compile()
     {
         $url = [];
@@ -422,14 +471,269 @@ class URLBuilder
         return implode($url);
     }
 
-    public function queryString()
+    /**
+     * Возвращает сгенерированную url-строку
+     *
+     * @return string
+     */
+    public function __toString()
     {
-        if (empty($this->components['query'])) {
-            return '';
+        return $this->compile();
+    }
+
+    /**
+     * Удаляет все get-переменные текущего url
+     *
+     * @return $this
+     */
+    public function clearQuery()
+    {
+        $this->components['query'] = [];
+
+        return $this;
+    }
+
+    /**
+     * Возвращает или устанавливает текущее состояние зависимости
+     * от регистра символов. Используется в методах работы с path и
+     * segments.
+     *
+     * @param bool|null $caseSensitive
+     *
+     * @return $this|bool
+     */
+    public function caseSensitive($caseSensitive = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->caseSensitive;
         }
 
-        $queryString = http_build_query($this->components['query']);
+        $this->caseSensitive = (bool)$caseSensitive;
 
-        return $this->encoded ? $queryString : urldecode($queryString);
+        return $this;
+    }
+
+    /**
+     * Возвращает или устанавливает состояние текущего url.
+     *
+     * Используется при сборе разборе url-строк
+     *
+     * @param bool|null $encoded
+     *
+     * @return $this|bool
+     */
+    public function encoded($encoded = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->encoded;
+        }
+
+        $this->encoded = (bool)$encoded;
+
+        return $this;
+    }
+
+    /**
+     * Возвращает или устанавливает состояние текущего url.
+     *
+     * Используется для указания scheme http-ссылки
+     *
+     * @param bool|null $secure
+     *
+     * @return bool|mixed|\Dukhanin\Support\URLBuilder
+     */
+    public function secure($secure = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->scheme() === 'https';
+        }
+
+        return $this->scheme($secure ? 'https' : 'http');
+    }
+
+    /**
+     * Возвращает объект punycode-энкодера
+     *
+     * @return \TrueBV\Punycode
+     */
+    public function punycode()
+    {
+        return app(Punycode::class);
+    }
+
+    /**
+     * Возвращаяет "очищенный" $scheme
+     *
+     * @param mixed $scheme
+     *
+     * @return string
+     */
+    protected function sanitizeScheme($scheme)
+    {
+        return strtolower(preg_replace('#://$#', '', $scheme));
+    }
+
+    /**
+     * Возвращаяет "очищенный" $host
+     *
+     * @param mixed $host
+     *
+     * @return mixed
+     */
+    protected function sanitizeHost($host)
+    {
+        if (preg_match('/(^|\.)xn--/', $host)) {
+            $host = $this->punycode()->decode($host);
+        }
+
+        return $host;
+    }
+
+    /**
+     * Возвращаяет "очищенное" имя пользователя $user
+     *
+     * @return bool|string
+     */
+    protected function sanitizeUser($user)
+    {
+        return $user === false ? false : strval($user);
+    }
+
+    /**
+     * Возвращаяет "очищенный" пароль пользователя $pass
+     *
+     * @param mixed $pass
+     *
+     * @return bool|string
+     */
+    protected function sanitizePass($pass)
+    {
+        return $pass === false ? false : strval($pass);
+    }
+
+    /**
+     * Возвращаяет "очищенный" path
+     *
+     * @param mixed $path
+     *
+     * @return string
+     */
+    protected function sanitizePath($path)
+    {
+        if (is_array($path)) {
+            $path = implode('/', $this->sanitizeSegments($path));
+        }
+
+        return urldecode(trim(preg_replace('#/+#', '/', $path), '/'));
+    }
+
+    /**
+     * Возвращаяет "очищенный" массив $segments
+     *
+     * @param mixed $segments
+     *
+     * @return array
+     */
+    protected function sanitizeSegments($segments)
+    {
+        return array_filter($segments, function ($segment) {
+            return ! in_array($segment, ['', null, false], true);
+        });
+    }
+
+    /**
+     * Возвращаяет "очищенный" $fragment (#)
+     *
+     * @param mixed $fragment
+     *
+     * @return mixed
+     */
+    protected function sanitizeFragment($fragment)
+    {
+        return ($fragment = str_replace('#', '', $fragment)) ? $fragment : null;
+    }
+
+    /**
+     * Возвращаяет "очищенный" массив get-переменный $query
+     *
+     * @param mixed $query
+     *
+     * @return array
+     */
+    protected function sanitizeQuery($query)
+    {
+        return array_filter($query, function ($item) {
+            return ! is_null($item);
+        });
+    }
+
+    /**
+     * Возвращает значения компонент по-умолчанию для текущего url
+     *
+     * @return array
+     */
+    protected function componentsDefaults()
+    {
+        return [
+            'scheme' => static::$request->secure() ? 'https' : 'http',
+            'host' => null,
+            'port' => null,
+            'user' => null,
+            'pass' => null,
+            'path' => '',
+            'query' => [],
+            'fragment' => null,
+        ];
+    }
+
+    /**
+     * Возвращает массив (components) разобранного url
+     *
+     * @param string $url
+     *
+     * @return array
+     */
+    protected function parseUrl($url)
+    {
+        if ($parsed = parse_url($url)) {
+            $pock = null;
+
+            // С некоторыми url возникают трудности при разборе с помощью
+            // parse_url(), поэтому делаем небольшую доводку результата
+
+            if (preg_match('#(^.+://|^//|^)(.+?(:.+)?@)?(.*?)([/:\#\?]|$)#', $url, $pock)) {
+                $parsed['host'] = $pock[4];
+            }
+
+            if (preg_match('#/(.*?)([\?\#]|$)#', preg_replace('#(^.+://|^//)#', '', $url), $pock)) {
+                $parsed['path'] = $pock[1];
+            }
+
+            if (! empty($parsed['query'])) {
+                parse_str($parsed['query'], $parsed['query']);
+
+                return $parsed;
+            }
+        }
+
+        return is_array($parsed) ? $parsed : [];
+    }
+
+    /**
+     * Устанавливает url адресс
+     *
+     * @param $url
+     */
+    protected function setUrl($url)
+    {
+        $parsed = $this->parseUrl($url) + $this->componentsDefaults();
+
+        $this->scheme($parsed['scheme']);
+        $this->host($parsed['host']);
+        $this->user($parsed['user']);
+        $this->pass($parsed['pass']);
+        $this->path($parsed['path']);
+        $this->query($parsed['query']);
+        $this->fragment($parsed['fragment']);
     }
 }

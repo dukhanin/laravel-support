@@ -1,9 +1,8 @@
 <?php
 
-namespace Tests\Unit;
+namespace Dukhanin\Support\Tests;
 
 use Dukhanin\Support\Arr;
-use PHPUnit\Framework\TestCase;
 
 class ArrTest extends TestCase
 {
@@ -18,12 +17,12 @@ class ArrTest extends TestCase
 
         Arr::before($array, 'three', 'Three', 'four');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-                'three' => 'Three',
-                'four' => 'Four',
-            ]);
+        $this->assertEquals([
+            'one' => 'One',
+            'two' => 'Two',
+            'three' => 'Three',
+            'four' => 'Four',
+        ], $array);
     }
 
     public function testBeforeWithExistsItem()
@@ -39,12 +38,12 @@ class ArrTest extends TestCase
 
         Arr::before($array, 'three', 'Three', 'four');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-                'three' => 'Three',
-                'four' => 'Four',
-            ]);
+        $this->assertEquals([
+            'one' => 'One',
+            'two' => 'Two',
+            'three' => 'Three',
+            'four' => 'Four',
+        ], $array);
     }
 
     public function testBeforeWithUnexistsNeighbor()
@@ -57,11 +56,11 @@ class ArrTest extends TestCase
 
         Arr::before($array, 'one', 'One', 'dummy');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-                'three' => 'Three',
-            ]);
+        $this->assertEquals([
+            'one' => 'One',
+            'two' => 'Two',
+            'three' => 'Three',
+        ], $array);
     }
 
     public function testBeforeWithUndefinedArray()
@@ -69,10 +68,10 @@ class ArrTest extends TestCase
         Arr::before($array, 'two', 'Two');
         Arr::before($array, 'one', 'One');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-            ]);
+        $this->assertEquals([
+            'one' => 'One',
+            'two' => 'Two',
+        ], $array);
     }
 
     public function testBeforeWithNullKeys()
@@ -85,11 +84,11 @@ class ArrTest extends TestCase
 
         Arr::before($array, null, 'One');
 
-        $this->assertTrue($array === [
-                'One',
-                'two' => 'Two',
-                'three' => 'Three',
-            ]);
+        $this->assertEquals([
+            'One',
+            'two' => 'Two',
+            'three' => 'Three',
+        ], $array);
     }
 
     public function testAfterWithNewItem()
@@ -103,12 +102,12 @@ class ArrTest extends TestCase
 
         Arr::after($array, 'three', 'Three', 'two');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-                'three' => 'Three',
-                'four' => 'Four',
-            ]);
+        $this->assertEquals([
+            'one' => 'One',
+            'two' => 'Two',
+            'three' => 'Three',
+            'four' => 'Four',
+        ], $array);
     }
 
     public function testAfterWithExistsItem()
@@ -124,12 +123,12 @@ class ArrTest extends TestCase
 
         Arr::after($array, 'three', 'Three', 'two');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-                'three' => 'Three',
-                'four' => 'Four',
-            ]);
+        $this->assertEquals([
+            'one' => 'One',
+            'two' => 'Two',
+            'three' => 'Three',
+            'four' => 'Four',
+        ], $array);
     }
 
     public function testAfterWithUnexistsNeighbor()
@@ -142,11 +141,11 @@ class ArrTest extends TestCase
 
         Arr::after($array, 'three', 'Three', 'dummy');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-                'three' => 'Three',
-            ]);
+        $this->assertEquals([
+            'one' => 'One',
+            'two' => 'Two',
+            'three' => 'Three',
+        ], $array);
     }
 
     public function testAfterWithUndefinedArray()
@@ -154,10 +153,10 @@ class ArrTest extends TestCase
         Arr::after($array, 'one', 'One');
         Arr::after($array, 'two', 'Two');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-            ]);
+        $this->assertEquals([
+            'one' => 'One',
+            'two' => 'Two',
+        ], $array);
     }
 
     public function testAfterWithNullKeys()
@@ -170,11 +169,11 @@ class ArrTest extends TestCase
 
         Arr::after($array, null, 'Three');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-                'Three',
-            ]);
+        $this->assertEquals([
+            'one' => 'One',
+            'two' => 'Two',
+            'Three',
+        ], $array);
     }
 
     public function testBeforeDotNotationWithNewItem()
@@ -199,23 +198,23 @@ class ArrTest extends TestCase
             'c' => 'Two C',
         ], 'three');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals([
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ], $array);
     }
 
     public function testBeforeDotNotationWithExistsItem()
@@ -246,23 +245,23 @@ class ArrTest extends TestCase
             'c' => 'Two C',
         ], 'three');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals([
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ], $array);
     }
 
     public function testBeforeDotNotationWithUnexistsNeighbor()
@@ -287,23 +286,23 @@ class ArrTest extends TestCase
             'c' => 'One C',
         ], 'dummy');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals([
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ], $array);
     }
 
     public function testBeforeDotNotationWithNestedNewItem()
@@ -328,23 +327,23 @@ class ArrTest extends TestCase
 
         Arr::beforeDotNotation($array, 'b', 'Two B', 'two.c');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals([
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ], $array);
     }
 
     public function testBeforeDotNotationWithNestedExistsItem()
@@ -371,23 +370,23 @@ class ArrTest extends TestCase
 
         Arr::beforeDotNotation($array, 'b', 'Two B', 'two.c');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals([
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ], $array);
     }
 
     public function testBeforeDotNotationWithNestedUnexistsNeighbor()
@@ -412,23 +411,23 @@ class ArrTest extends TestCase
 
         Arr::beforeDotNotation($array, 'a', 'One A', 'one.dummy');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals([
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ], $array);
     }
 
     public function testBeforeDotNotationWithUndefinedArray()
@@ -436,10 +435,10 @@ class ArrTest extends TestCase
         Arr::beforeDotNotation($array, 'two', 'Two');
         Arr::beforeDotNotation($array, 'one', 'One');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-            ]);
+        $this->assertEquals([
+            'one' => 'One',
+            'two' => 'Two',
+        ], $array);
     }
 
     public function testBeforeDotNotationWithNullKeys()
@@ -452,11 +451,11 @@ class ArrTest extends TestCase
 
         Arr::beforeDotNotation($array, null, 'One');
 
-        $this->assertTrue($array === [
-                'One',
-                'two' => 'Two',
-                'three' => 'Three',
-            ]);
+        $this->assertEquals([
+            'One',
+            'two' => 'Two',
+            'three' => 'Three',
+        ], $array);
     }
 
     public function testAfterDotNotationWithNewItem()
@@ -481,23 +480,23 @@ class ArrTest extends TestCase
             'c' => 'Two C',
         ], 'one');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals($array, [
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ]);
     }
 
     public function testAfterDotNotationWithExistsItem()
@@ -528,23 +527,23 @@ class ArrTest extends TestCase
             'c' => 'Two C',
         ], 'one');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals([
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ], $array);
     }
 
     public function testAfterDotNotationWithUnexistsNeighbor()
@@ -569,23 +568,23 @@ class ArrTest extends TestCase
             'c' => 'Three C',
         ], 'dummy');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals([
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ], $array);
     }
 
     public function testAfterDotNotationWithNestedNewItem()
@@ -610,23 +609,23 @@ class ArrTest extends TestCase
 
         Arr::afterDotNotation($array, 'b', 'Two B', 'two.a');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals([
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ], $array);
     }
 
     public function testAfterDotNotationWithNestedExistsItem()
@@ -653,23 +652,23 @@ class ArrTest extends TestCase
 
         Arr::afterDotNotation($array, 'b', 'Two B', 'two.a');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals([
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ], $array);
     }
 
     public function testAfterDotNotationWithNestedUnexistsNeighbor()
@@ -694,23 +693,23 @@ class ArrTest extends TestCase
 
         Arr::afterDotNotation($array, 'c', 'One C', 'one.dummy');
 
-        $this->assertTrue($array === [
-                'one' => [
-                    'a' => 'One A',
-                    'b' => 'One B',
-                    'c' => 'One C',
-                ],
-                'two' => [
-                    'a' => 'Two A',
-                    'b' => 'Two B',
-                    'c' => 'Two C',
-                ],
-                'three' => [
-                    'a' => 'Three A',
-                    'b' => 'Three B',
-                    'c' => 'Three C',
-                ],
-            ]);
+        $this->assertEquals([
+            'one' => [
+                'a' => 'One A',
+                'b' => 'One B',
+                'c' => 'One C',
+            ],
+            'two' => [
+                'a' => 'Two A',
+                'b' => 'Two B',
+                'c' => 'Two C',
+            ],
+            'three' => [
+                'a' => 'Three A',
+                'b' => 'Three B',
+                'c' => 'Three C',
+            ],
+        ], $array);
     }
 
     public function testAfterDotNotationWithUndefinedArray()
@@ -718,10 +717,10 @@ class ArrTest extends TestCase
         Arr::afterDotNotation($array, 'one', 'One');
         Arr::afterDotNotation($array, 'two', 'Two');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-            ]);
+        $this->assertEquals($array, [
+            'one' => 'One',
+            'two' => 'Two',
+        ]);
     }
 
     public function testAfterDotNotationWithNullKeys()
@@ -734,10 +733,10 @@ class ArrTest extends TestCase
 
         Arr::afterDotNotation($array, null, 'Three');
 
-        $this->assertTrue($array === [
-                'one' => 'One',
-                'two' => 'Two',
-                'Three',
-            ]);
+        $this->assertEquals([
+            'one' => 'One',
+            'two' => 'Two',
+            'Three',
+        ], $array);
     }
 }

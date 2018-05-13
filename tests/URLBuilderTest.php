@@ -1,16 +1,16 @@
 <?php
 
-namespace Tests\Unit;
+namespace Dukhanin\Support\Tests;
 
 use Dukhanin\Support\URLBuilder;
-use PHPUnit\Framework\TestCase;
 
 class URLBuilderTest extends TestCase
 {
     public function testCompile()
     {
         $url = new URLBuilder('http://dukhanin:testPass@antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment');
-        $this->assertTrue($url->compile() === 'http://dukhanin:testPass@antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment');
+        $this->assertEquals('http://dukhanin:testPass@antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment',
+            $url->compile());
 
         $url = new URLBuilder();
         $url->scheme('http')->user('dukhanin')->pass('testPass')->host('antondukhanin.ru')->path('One/Two')->query([
@@ -18,7 +18,8 @@ class URLBuilderTest extends TestCase
             'query2' => 'value2',
         ])->fragment('fragment');
 
-        $this->assertTrue($url->compile() === 'http://dukhanin:testPass@antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment');
+        $this->assertEquals('http://dukhanin:testPass@antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment',
+            $url->compile());
     }
 
     public function testCaseSensitive()
@@ -26,10 +27,10 @@ class URLBuilderTest extends TestCase
         $url = new URLBuilder;
 
         $url->caseSensitive(true);
-        $this->assertTrue($url->caseSensitive() === true);
+        $this->assertTrue($url->caseSensitive());
 
         $url->caseSensitive(false);
-        $this->assertTrue($url->caseSensitive() === false);
+        $this->assertFalse($url->caseSensitive());
     }
 
     public function testEncoded()
@@ -40,67 +41,69 @@ class URLBuilderTest extends TestCase
         $url1->encoded(false);
         $url2->encoded(false);
 
-        $this->assertTrue($url1->encoded() === false);
-        $this->assertTrue($url2->encoded() === false);
+        $this->assertFalse($url1->encoded());
+        $this->assertFalse($url2->encoded());
 
-        $this->assertTrue($url1->host() === 'духанин.рф');
-        $this->assertTrue($url2->host() === 'духанин.рф');
+        $this->assertEquals('духанин.рф', $url1->host());
+        $this->assertEquals('духанин.рф', $url2->host());
 
-        $this->assertTrue($url1->path() === 'Один/Два');
-        $this->assertTrue($url2->path() === 'Один/Два');
+        $this->assertEquals('Один/Два', $url1->path());
+        $this->assertEquals('Один/Два', $url2->path());
 
-        $this->assertTrue($url1->compile() === 'http://духанин.рф/Один/Два?query=value#fragment');
-        $this->assertTrue($url2->compile() === 'http://духанин.рф/Один/Два?query=value#fragment');
+        $this->assertEquals('http://духанин.рф/Один/Два?query=value#fragment', $url1->compile());
+        $this->assertEquals('http://духанин.рф/Один/Два?query=value#fragment', $url2->compile());
 
         $url1->encoded(true);
         $url2->encoded(true);
 
-        $this->assertTrue($url1->encoded() === true);
-        $this->assertTrue($url2->encoded() === true);
+        $this->assertTrue($url1->encoded());
+        $this->assertTrue($url2->encoded());
 
-        $this->assertTrue($url1->host() === 'xn--80ahntb6ao.xn--p1ai');
-        $this->assertTrue($url2->host() === 'xn--80ahntb6ao.xn--p1ai');
+        $this->assertEquals('xn--80ahntb6ao.xn--p1ai', $url1->host());
+        $this->assertEquals('xn--80ahntb6ao.xn--p1ai', $url2->host());
 
-        $this->assertTrue($url1->path() === '%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0');
-        $this->assertTrue($url2->path() === '%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0');
+        $this->assertEquals('%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0', $url1->path());
+        $this->assertEquals('%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0', $url2->path());
 
-        $this->assertTrue($url1->compile() === 'http://xn--80ahntb6ao.xn--p1ai/%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0?query=value#fragment');
-        $this->assertTrue($url2->compile() === 'http://xn--80ahntb6ao.xn--p1ai/%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0?query=value#fragment');
+        $this->assertEquals($url1->compile(),
+            'http://xn--80ahntb6ao.xn--p1ai/%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0?query=value#fragment');
+        $this->assertEquals($url2->compile(),
+            'http://xn--80ahntb6ao.xn--p1ai/%D0%9E%D0%B4%D0%B8%D0%BD/%D0%94%D0%B2%D0%B0?query=value#fragment');
     }
 
     public function testScheme()
     {
         $url = new URLBuilder('HTTP://antondukhanin.ru/One/Two?query=value#fragment');
 
-        $this->assertTrue($url->scheme() === 'http');
+        $this->assertEquals('http', $url->scheme());
 
         $url->scheme('HTTPS://');
 
-        $this->assertTrue($url->scheme() === 'https');
+        $this->assertEquals('https', $url->scheme());
     }
 
     public function testFragment()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query=value');
 
-        $this->assertTrue($url->fragment() === null);
+        $this->assertNull($url->fragment());
 
         $url->fragment('#fragment');
 
-        $this->assertTrue($url->fragment() === 'fragment');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two?query=value#fragment');
+        $this->assertEquals('fragment', $url->fragment());
+        $this->assertEquals('http://antondukhanin.ru/One/Two?query=value#fragment', $url->compile());
     }
 
     public function testSecure()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query=value#fragment');
 
-        $this->assertTrue($url->secure() === false);
-        $this->assertTrue($url->scheme() === 'http');
+        $this->assertFalse($url->secure());
+        $this->assertEquals('http', $url->scheme());
 
         $url->secure(true);
-        $this->assertTrue($url->secure() === true);
-        $this->assertTrue($url->scheme() === 'https');
+        $this->assertTrue($url->secure());
+        $this->assertEquals('https', $url->scheme());
     }
 
     public function testUser()
@@ -108,8 +111,8 @@ class URLBuilderTest extends TestCase
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query=value#fragment');
 
         $url->user('dukhanin');
-        $this->assertTrue($url->user() === 'dukhanin');
-        $this->assertTrue($url->compile() === 'http://dukhanin@antondukhanin.ru/One/Two?query=value#fragment');
+        $this->assertEquals('dukhanin', $url->user());
+        $this->assertEquals('http://dukhanin@antondukhanin.ru/One/Two?query=value#fragment', $url->compile());
     }
 
     public function testPass()
@@ -118,31 +121,31 @@ class URLBuilderTest extends TestCase
 
         $url->user('dukhanin');
         $url->pass('testPass');
-        $this->assertTrue($url->pass() === 'testPass');
-        $this->assertTrue($url->compile() === 'http://dukhanin:testPass@antondukhanin.ru/One/Two?query=value#fragment');
+        $this->assertEquals('testPass', $url->pass());
+        $this->assertEquals('http://dukhanin:testPass@antondukhanin.ru/One/Two?query=value#fragment', $url->compile());
     }
 
     public function testPath()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query=value#fragment');
 
-        $this->assertTrue($url->path() === 'One/Two');
+        $this->assertEquals('One/Two', $url->path());
 
         $url->path(false);
-        $this->assertTrue($url->path() === '');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru?query=value#fragment');
+        $this->assertEquals('', $url->path());
+        $this->assertEquals('http://antondukhanin.ru?query=value#fragment', $url->compile());
 
         $url->path('/');
-        $this->assertTrue($url->path() === '');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru?query=value#fragment');
+        $this->assertEquals('', $url->path());
+        $this->assertEquals('http://antondukhanin.ru?query=value#fragment', $url->compile());
 
         $url->path('/One/Two/');
-        $this->assertTrue($url->path() === 'One/Two');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two?query=value#fragment');
+        $this->assertEquals('One/Two', $url->path());
+        $this->assertEquals('http://antondukhanin.ru/One/Two?query=value#fragment', $url->compile());
 
         $url->path(['One', 'Two', 'three']);
-        $this->assertTrue($url->path() === 'One/Two/three');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two/three?query=value#fragment');
+        $this->assertEquals('One/Two/three', $url->path());
+        $this->assertEquals('http://antondukhanin.ru/One/Two/three?query=value#fragment', $url->compile());
 
         return $this;
     }
@@ -151,16 +154,16 @@ class URLBuilderTest extends TestCase
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query=value#fragment');
 
-        $this->assertTrue($url->segments() === ['One', 'Two']);
+        $this->assertEquals($url->segments(), ['One', 'Two']);
     }
 
     public function testSegment()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query=value#fragment');
 
-        $this->assertTrue($url->segment(0) === 'One');
-        $this->assertTrue($url->segment(1) === 'Two');
-        $this->assertTrue($url->segment(2) === false);
+        $this->assertEquals('One', $url->segment(0));
+        $this->assertEquals('Two', $url->segment(1));
+        $this->assertNull($url->segment(2));
     }
 
     public function testAppend()
@@ -168,13 +171,13 @@ class URLBuilderTest extends TestCase
         $url = new URLBuilder('http://antondukhanin.ru?query=value#fragment');
 
         $url->append('/One//Two/');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two?query=value#fragment');
+        $this->assertEquals('http://antondukhanin.ru/One/Two?query=value#fragment', $url->compile());
 
         $url->append('/Three/');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two/Three?query=value#fragment');
+        $this->assertEquals('http://antondukhanin.ru/One/Two/Three?query=value#fragment', $url->compile());
 
         $url->append(['/Four', 'Five']);
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
+        $this->assertEquals('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment', $url->compile());
     }
 
     public function testPrepend()
@@ -182,10 +185,10 @@ class URLBuilderTest extends TestCase
         $url = new URLBuilder('http://antondukhanin.ru?query=value#fragment');
 
         $url->prepend('/Three//Four/');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/Three/Four?query=value#fragment');
+        $this->assertEquals('http://antondukhanin.ru/Three/Four?query=value#fragment', $url->compile());
 
         $url->prepend(['One/', '/Two/']);
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two/Three/Four?query=value#fragment');
+        $this->assertEquals('http://antondukhanin.ru/One/Two/Three/Four?query=value#fragment', $url->compile());
     }
 
     public function testShift()
@@ -196,15 +199,15 @@ class URLBuilderTest extends TestCase
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
 
         // fetching incorrect path begining
-        $this->assertTrue($url->shift('Ten/Eleven') === false);
+        $this->assertNull($url->shift('Ten/Eleven'));
 
         // fetching first two path segments
-        $this->assertTrue($url->shift('One/Two') === 'One/Two');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/Three/Four/Five?query=value#fragment');
+        $this->assertEquals('One/Two', $url->shift('One/Two'));
+        $this->assertEquals('http://antondukhanin.ru/Three/Four/Five?query=value#fragment', $url->compile());
 
         // fetching the first segment (index=0 by default)
-        $this->assertTrue($url->shift() === 'Three');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/Four/Five?query=value#fragment');
+        $this->assertEquals('Three', $url->shift());
+        $this->assertEquals('http://antondukhanin.ru/Four/Five?query=value#fragment', $url->compile());
     }
 
     public function testShiftPath()
@@ -212,41 +215,41 @@ class URLBuilderTest extends TestCase
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
 
         // fetching incorrect path begining
-        $this->assertTrue($url->shiftPath('Ten/Eleven') === false);
+        $this->assertNull($url->shiftPath('Ten/Eleven'));
 
         // fetching first two path segments
-        $this->assertTrue($url->shiftPath('/One//Two/') === 'One/Two');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/Three/Four/Five?query=value#fragment');
+        $this->assertEquals('One/Two', $url->shiftPath('/One//Two/'));
+        $this->assertEquals('http://antondukhanin.ru/Three/Four/Five?query=value#fragment', $url->compile());
 
         // fetching first two path segments using an array as argument
-        $this->assertTrue($url->shiftPath(['Three', 'Four']) === 'Three/Four');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/Five?query=value#fragment');
+        $this->assertEquals('Three/Four', $url->shiftPath(['Three', 'Four']));
+        $this->assertEquals('http://antondukhanin.ru/Five?query=value#fragment', $url->compile());
 
         // testing caseSensitive mode
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
 
         $url->caseSensitive(true);
 
-        $this->assertTrue($url->shiftPath('/one//two/') === false);
-        $this->assertTrue($url->shiftPath('/One//Two/') === 'One/Two');
-        $this->assertTrue($url->shiftPath(['three', 'four']) === false);
-        $this->assertTrue($url->shiftPath(['Three', 'Four']) === 'Three/Four');
+        $this->assertNull($url->shiftPath('/one//two/'));
+        $this->assertEquals('One/Two', $url->shiftPath('/One//Two/'));
+        $this->assertNull($url->shiftPath(['three', 'four']));
+        $this->assertEquals('Three/Four', $url->shiftPath(['Three', 'Four']));
 
         // testing not caseSensitive mode
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
 
         $url->caseSensitive(false);
 
-        $this->assertTrue($url->shiftPath('/one//two/') === 'One/Two');
-        $this->assertTrue($url->shiftPath(['three', 'four']) === 'Three/Four');
+        $this->assertEquals('One/Two', $url->shiftPath('/one//two/'));
+        $this->assertEquals('Three/Four', $url->shiftPath(['three', 'four']));
     }
 
     public function testShiftSegment()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query=value#fragment');
 
-        $this->assertTrue($url->shiftSegment() === 'One');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/Two?query=value#fragment');
+        $this->assertEquals('One', $url->shiftSegment());
+        $this->assertEquals('http://antondukhanin.ru/Two?query=value#fragment', $url->compile());
     }
 
     public function testPop()
@@ -257,15 +260,15 @@ class URLBuilderTest extends TestCase
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
 
         // fetching incorrect path ending
-        $this->assertTrue($url->pop('Ten/Eleven') === false);
+        $this->assertNull($url->pop('Ten/Eleven'));
 
         // fetching first two path segments
-        $this->assertTrue($url->pop('Four/Five') === 'Four/Five');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two/Three?query=value#fragment');
+        $this->assertEquals('Four/Five', $url->pop('Four/Five'));
+        $this->assertEquals('http://antondukhanin.ru/One/Two/Three?query=value#fragment', $url->compile());
 
         // fetching the last segment
-        $this->assertTrue($url->pop() === 'Three');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two?query=value#fragment');
+        $this->assertEquals('Three', $url->pop());
+        $this->assertEquals('http://antondukhanin.ru/One/Two?query=value#fragment', $url->compile());
     }
 
     public function testPopPath()
@@ -273,64 +276,64 @@ class URLBuilderTest extends TestCase
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
 
         // fetching incorrect path begining
-        $this->assertTrue($url->popPath('Ten/Eleven') === false);
+        $this->assertNull($url->popPath('Ten/Eleven'));
 
         // fetching first two path segments
-        $this->assertTrue($url->popPath('/Four//Five/') === 'Four/Five');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two/Three?query=value#fragment');
+        $this->assertEquals('Four/Five', $url->popPath('/Four//Five/'));
+        $this->assertEquals('http://antondukhanin.ru/One/Two/Three?query=value#fragment', $url->compile());
 
         // fetching first two path segments using an array as argument
-        $this->assertTrue($url->popPath(['Two', 'Three']) === 'Two/Three');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One?query=value#fragment');
+        $this->assertEquals('Two/Three', $url->popPath(['Two', 'Three']));
+        $this->assertEquals('http://antondukhanin.ru/One?query=value#fragment', $url->compile());
 
         // testing caseSensitive mode
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
 
         $url->caseSensitive(true);
 
-        $this->assertTrue($url->popPath('/four//five/') === false);
-        $this->assertTrue($url->popPath('/Four//Five/') === 'Four/Five');
-        $this->assertTrue($url->popPath(['two', 'three']) === false);
-        $this->assertTrue($url->popPath(['Two', 'Three']) === 'Two/Three');
+        $this->assertNull($url->popPath('/four//five/'));
+        $this->assertEquals('Four/Five', $url->popPath('/Four//Five/'));
+        $this->assertNull($url->popPath(['two', 'three']));
+        $this->assertEquals('Two/Three', $url->popPath(['Two', 'Three']));
 
         // testing not caseSensitive mode
         $url = new URLBuilder('http://antondukhanin.ru/One/Two/Three/Four/Five?query=value#fragment');
 
         $url->caseSensitive(false);
 
-        $this->assertTrue($url->popPath('/four//five/') === 'Four/Five');
-        $this->assertTrue($url->popPath(['two', 'three']) === 'Two/Three');
+        $this->assertEquals('Four/Five', $url->popPath('/four//five/'));
+        $this->assertEquals('Two/Three', $url->popPath(['two', 'three']));
     }
 
     public function testPopSegment()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query=value#fragment');
 
-        $this->assertTrue($url->popSegment() === 'Two');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One?query=value#fragment');
+        $this->assertEquals('Two', $url->popSegment());
+        $this->assertEquals('http://antondukhanin.ru/One?query=value#fragment', $url->compile());
     }
 
     public function testQueryString()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment');
 
-        $this->assertTrue($url->queryString() === 'query1=value1&query2=value2');
+        $this->assertEquals('query1=value1&query2=value2', $url->queryString());
 
         $url = new URLBuilder('http://antondukhanin.ru/One/Two#fragment');
 
-        $this->assertTrue($url->queryString() === '');
+        $this->assertEquals('', $url->queryString());
     }
 
     public function testClearQuery()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query1=value1&query2=value2#fragment');
 
-        $this->assertTrue($url->queryString() === 'query1=value1&query2=value2');
+        $this->assertEquals('query1=value1&query2=value2', $url->queryString());
 
         $url->clearQuery();
 
-        $this->assertTrue($url->queryString() === '');
-        $this->assertTrue($url->compile() === 'http://antondukhanin.ru/One/Two#fragment');
+        $this->assertEquals('', $url->queryString());
+        $this->assertEquals('http://antondukhanin.ru/One/Two#fragment', $url->compile());
     }
 
     public function testQuery()
@@ -339,24 +342,24 @@ class URLBuilderTest extends TestCase
 
         $url->query(['query2' => 'value2']);
 
-        $this->assertTrue($url->query('query1') === 'value1');
-        $this->assertTrue($url->query('query2') === 'value2');
-        $this->assertTrue($url->query() === [
-                'query1' => 'value1',
-                'query2' => 'value2',
-            ]);
+        $this->assertEquals('value1', $url->query('query1'));
+        $this->assertEquals('value2', $url->query('query2'));
+        $this->assertEquals($url->query(), [
+            'query1' => 'value1',
+            'query2' => 'value2',
+        ]);
 
         $url->query(false);
 
-        $this->assertTrue($url->query() === []);
+        $this->assertEquals([], $url->query());
     }
 
     public function testPunycode()
     {
         $punycode = (new URLBuilder())->punycode();
 
-        $this->assertTrue($punycode->encode('духанин.рф') === 'xn--80ahntb6ao.xn--p1ai');
-        $this->assertTrue($punycode->decode('xn--80ahntb6ao.xn--p1ai') === 'духанин.рф');
+        $this->assertEquals('xn--80ahntb6ao.xn--p1ai', $punycode->encode('духанин.рф'));
+        $this->assertEquals('духанин.рф', $punycode->decode('xn--80ahntb6ao.xn--p1ai'));
     }
 
     public function testCopy()
@@ -365,17 +368,17 @@ class URLBuilderTest extends TestCase
 
         $url2 = $url1->copy();
 
-        $this->assertTrue($url1->compile() === $url2->compile());
+        $this->assertEquals($url2->compile(), $url1->compile());
 
         $url1->query(false);
 
-        $this->assertTrue($url1->compile() !== $url2->compile());
+        $this->assertNotEquals($url1->compile(), $url2->compile());
     }
 
     public function testToString()
     {
         $url = new URLBuilder('http://antondukhanin.ru/One/Two?query1=value1');
 
-        $this->assertTrue($url->__toString() === 'http://antondukhanin.ru/One/Two?query1=value1');
+        $this->assertEquals('http://antondukhanin.ru/One/Two?query1=value1', $url->__toString());
     }
 }

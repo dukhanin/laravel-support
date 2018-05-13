@@ -1,70 +1,50 @@
 <?php
+
 namespace Dukhanin\Support;
 
-use \Jenssegers\Date\Date as BaseDate;
+use Jenssegers\Date\Date as BaseDate;
 
+/**
+ * Класс расширяет Jenssegers\Date\Date, добавляя возможность
+ * рендерить дату в строку (__toString()) как в стандартном
+ * формате (\Carbon\Carbon::$toStringFormat), так и указать формат
+ * рендеринга для отдельного объекта
+ */
 class Date extends BaseDate
 {
-    protected $format;
+    /**
+     * Формат рендеринга даты для текущего объекта
+     *
+     * @var
+     */
+    protected $customToStringFormat;
 
-    protected $as = 'datetime';
-
-    protected $hideEmptyTime = true;
-
-    public function setFormat($format)
+    /**
+     * Сбрасывает формат рендеринга даты для текущего объекта
+     */
+    public function resetCustomToStringFormat()
     {
-        $this->format = $format;
+        $this->customToStringFormat = null;
     }
 
-    protected function initFormat()
+    /**
+     * Устанавливает формат рендеринга даты для текущего объекта
+     *
+     * @param $format
+     */
+    public function setCustomToStringFormat($format)
     {
-        $this->format = config("dates.{$this->as}.format", $this->as == 'date' ? 'j F Y' : 'j F Y H:i:s');
+        $this->customToStringFormat = $format;
     }
 
-    public function getFormat()
-    {
-        if (is_null($this->format)) {
-            $this->initFormat();
-        }
-
-        return $this->format;
-    }
-
-    public function render()
-    {
-        return (string) is_callable($format = $this->getFormat()) ? $format($this) : $this->format($format);
-    }
-
-    public function isTimeEmpty()
-    {
-        return $this->format('H:i:s') === '00:00:00';
-    }
-
-    public function asDate()
-    {
-        $this->as = 'date';
-
-        $this->format = null;
-
-        return $this;
-    }
-
-    public function asDateTime()
-    {
-        $this->as = 'datetime';
-
-        $this->format = null;
-
-        return $this;
-    }
-
-    public function hideEmptyTime(bool $hideEmptyTime = true)
-    {
-        $this->hideEmptyTime = $hideEmptyTime;
-    }
-
+    /**
+     * Рендерит дату в формате текущего объекта (если указан),
+     * либо в стандартном форате (\Carbon\Carbon::$toStringFormat)
+     *
+     * @return mixed|string
+     */
     public function __toString()
     {
-        return $this->render();
+        return $this->format($this->customToStringFormat ?? static::$toStringFormat);
     }
 }

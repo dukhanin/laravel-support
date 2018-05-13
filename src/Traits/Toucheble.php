@@ -1,17 +1,14 @@
 <?php
 namespace Dukhanin\Support\Traits;
 
+/**
+ * Трейт — орфографическая ошибка %)
+ *
+ * Лежит для совместимости до 2018-03-01. После этой даты будет удален
+ *
+ * @deprecated
+ */
 trait Toucheble
 {
-    protected $touched = false;
-
-    public function touch()
-    {
-        $this->touched = true;
-    }
-
-    public function touched()
-    {
-        return $this->touched;
-    }
+    use Touchable;
 }

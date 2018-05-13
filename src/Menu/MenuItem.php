@@ -1,57 +1,137 @@
 <?php
+
 namespace Dukhanin\Support\Menu;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
 
 class MenuItem
 {
+    /**
+     * @var \Dukhanin\Support\Menu\MenuCollection
+     */
     protected $items;
 
+    /**
+     * Все параметры эемента меню, включая label, url
+     * и все остальные дополнительные ключи-значения,
+     * которые пришли в конструктор
+     *
+     * @var array
+     */
     protected $params = [];
 
-    public function __construct($item)
+    /**
+     * MenuItem constructor.
+     *
+     * @param mixed $item
+     */
+    public function __construct($item = [])
     {
-        $item = $this->value($item);
+        $item = $this->validate($item);
 
-        if (is_string($item)) {
-            $item = ['label' => $item];
-        }
+        $this->params = array_except($item, 'items');
 
-        if (! isset($item['active'])) {
-            $item['active'] = [get_class($this), 'itemActive'];
-        }
+        $this->items = new MenuCollection($item['items']);
 
-        if (! isset($item['route'])) {
-            $item['route'] = null;
-        }
-
-        if (! isset($item['action'])) {
-            $item['action'] = null;
-        }
-
-        if (! isset($item['url'])) {
-            $item['url'] = null;
-        }
-
-        if (! isset($item['enabled'])) {
-            $item['enabled'] = true;
-        }
-
-        if (isset($item['items'])) {
-
-            if (! empty($subitems = $this->value($item['items']))) {
-                foreach ($subitems as $key => $subitem) {
-                    $this->items()->put($key, $subitem);
-                }
-            }
-        }
-
-        unset($item['items']);
-
-        $this->set($item);
+        $this->items->setItemClass(static::class);
     }
 
+    /**
+     * Получить список вложенных элементов меню
+     *
+     * @return \Dukhanin\Support\Menu\MenuCollection
+     */
+    public function items()
+    {
+        return $this->items;
+    }
+
+    /**
+     * Получить url этого элемента меню
+     *
+     * @return string
+     */
+    public function url()
+    {
+        if (!is_null($this->params['url'])) {
+            return $this->params['url'];
+        }
+
+        if (is_array($route = $this->route)) {
+            return route(array_shift($route), $route);
+        } elseif (!is_null($this->route)) {
+            return route($this->route);
+        }
+
+        if (is_array($action = $this->action)) {
+            return action(array_shift($action), $action);
+        } elseif (!is_null($this->action)) {
+            return action($this->action);
+        }
+
+        return null;
+    }
+
+    /**
+     * Получить html-код тега <a> для этого
+     * элемента меню
+     *
+     * @param array $attributes
+     *
+     * @return string
+     */
+    public function a($attributes = [])
+    {
+        return html_tag('a', [
+            'href' => $this->url(),
+            'content' => $this->label(),
+        ], $attributes);
+    }
+
+    /**
+     * @param string|integer $key
+     *
+     * @return mixed
+     */
+    public function __get($key)
+    {
+        if (method_exists($this, $key)) {
+            return $this->{$key}();
+        }
+
+        return $this->value(array_get($this->params, $key));
+    }
+
+    /**
+     * @param string|integer $key
+     * @param mixed $value
+     */
+    public function __set($key, $value)
+    {
+        $this->params[$key] = $value;
+    }
+
+    /**
+     * @param string $name
+     * @param array $arguments
+     *
+     * @return mixed
+     */
+    public function __call($name, $arguments)
+    {
+        return $this->__get($name);
+    }
+
+    /**
+     * Преобразовать содержимое переменное $value
+     * в конечное значение (актуально для Closure- и callable-переменных)
+     *
+     * @param mixed $value
+     *
+     * @return mixed
+     */
     protected function value($value)
     {
         if (is_callable($value)) {
@@ -61,50 +141,49 @@ class MenuItem
         return $value;
     }
 
-    public function items()
+    /**
+     * Получить укомплектованный массив элемента меню
+     *
+     * @param $item
+     *
+     * @return array|string
+     */
+    protected function validate($item)
     {
-        if (is_null($this->items)) {
-            $this->initItems();
+        $this->value($item);
+
+        if (is_string($item)) {
+            $item = ['label' => $item];
         }
 
-        return $this->items;
+        return $item + [
+                'active' => [get_class($this), 'itemActive'],
+                'route' => null,
+                'action' => null,
+                'url' => null,
+                'enabled' => [get_class($this), 'hasAccess'],
+                'items' => $this->value(array_get($item, 'items')) ?? [],
+            ];
     }
 
-    protected function initItems()
+    /**
+     * Метод проверки активности пункта меню по-умолчанию.
+     *
+     * @param MenuItem|static $item
+     *
+     * @return bool
+     */
+    public static function itemActive(MenuItem $item)
     {
-        $this->items = new MenuCollection();
-    }
-
-    public function set($key, $value = null)
-    {
-        if (is_array($key)) {
-            foreach ($key as $_key => $_value) {
-                $this->set($_key, $_value);
-            }
-
-            return;
+        if (!is_null($item->route)) {
+            return Route::current() && Route::current()->getName() == $item->route;
         }
 
-        $key = strval($key);
-
-        if (property_exists($this, $key) && $key !== 'params') {
-            $this->{$key} = $value;
-        } else {
-            $this->params[$key] = $value;
-        }
-    }
-
-    public static function itemActive($item)
-    {
-        if (! is_null($item->route)) {
-            return Route::current()->getName() == $item->route;
+        if (!is_null($item->action)) {
+            return Route::current() && ends_with(Route::current()->getActionName(), $item->action);
         }
 
-        if (! is_null($item->action)) {
-            return ends_with(Route::current()->getActionName(), $item->action);
-        }
-
-        if (! is_null($item->url)) {
+        if (!is_null($item->url)) {
             $currentPath = trim(Request::path(), '/');
 
             $path = trim(parse_url($item->url, PHP_URL_PATH), '/');
@@ -115,67 +194,21 @@ class MenuItem
         return false;
     }
 
-    public function url()
+    /**
+     * Метод проверки доступа роли к элементу меню
+     *
+     * @param MenuItem|static $item
+     *
+     * @return bool
+     */
+    public static function hasAccess(MenuItem $item)
     {
-        if (! is_null($this->params['url'])) {
-            return $this->params['url'];
+        if (!is_null($item->access) && $user = Auth::user()) {
+            if (!in_array($user->role, array_merge((array)$item->access, ['root']))) {
+                return false;
+            }
         }
 
-        if (is_array($route = $this->route)) {
-            return route(array_shift($route), $route);
-        } elseif (! is_null($this->route)) {
-            return route($this->route);
-        }
-
-        if (is_array($action = $this->action)) {
-            return action(array_shift($action), $action);
-        } elseif (! is_null($this->action)) {
-            return action($this->action);
-        }
-    }
-
-    public function a($attributes = [])
-    {
-        return html_tag('a', [
-            'href' => $this->url(),
-            'content' => $this->label(),
-        ], $attributes);
-    }
-
-    public function __get($key)
-    {
-        return $this->get($key);
-    }
-
-    public function raw($key)
-    {
-        $key = strval($key);
-
-        if (property_exists($this, $key) && $key !== 'params') {
-            return $this->{$key};
-        }
-
-        if (isset($this->params[$key])) {
-            return $this->params[$key];
-        }
-    }
-
-    public function __set($key, $value)
-    {
-        $this->set($key, $value);
-    }
-
-    public function get($key)
-    {
-        if (method_exists($this, $key)) {
-            return $this->{$key}();
-        }
-
-        return $this->value($this->raw($key));
-    }
-
-    public function __call($name, $arguments)
-    {
-        return $this->get($name);
+        return true;
     }
 }
